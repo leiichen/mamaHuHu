@@ -281,7 +281,7 @@ function CanvasAssetMoreActionsPopoverComponent({
     }, []);
 
     const sortedSerieIds = useMemo(
-        () => [...selectedSerieIds].toSorted((left, right) => left - right),
+        () => [...selectedSerieIds].sort((left, right) => left - right),
         [selectedSerieIds],
     );
 

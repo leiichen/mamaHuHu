@@ -12,6 +12,7 @@
     "pg": "prisma generate",
     "db:push": "dotenv -e .env.development -- prisma db push",
     "pmd": "dotenv -e .env.development -- prisma migrate dev",
+    "db:migrate:deploy": "dotenv -e .env.production -- prisma migrate deploy",
     "db:studio": "dotenv -e .env.development -- prisma studio",
     "postinstall": "prisma generate"
   },

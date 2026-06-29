@@ -6,7 +6,6 @@ import { isAbortError } from "@/lib/isAbortError";
 import {
     parseSerieFragments,
     resolveInitialFragmentId,
-    type SerieFragment,
 } from "@/lib/serieFragments";
 
 // 加载分集编辑数据并管理当前选中分镜

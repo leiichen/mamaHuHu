@@ -95,7 +95,7 @@ export function getCaretTextOffset(root: HTMLElement) {
 }
 
 // 获取光标处的屏幕坐标
-export function getCaretClientRect(root: HTMLElement): MentionCaretRect | null {
+export function getCaretClientRect(_root: HTMLElement): MentionCaretRect | null {
     const selection = window.getSelection();
 
     if (!selection || selection.rangeCount === 0) {

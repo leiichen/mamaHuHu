@@ -7,9 +7,11 @@
         "ds": "pnpm --filter @xiaomaque/serve dev",
         "build:client": "pnpm --filter @xiaomaque/client build",
         "build:serve": "pnpm --filter @xiaomaque/serve build",
-        "build": "pnpm build:serve && pnpm build:client"
+        "build": "pnpm build:serve && pnpm build:client",
+        "start": "pnpm install && pnpm --filter @xiaomaque/serve db:migrate:deploy && pnpm build && (pnpm exec pm2 reload ecosystem.config.cjs --update-env || pnpm exec pm2 start ecosystem.config.cjs)"
     },
     "devDependencies": {
+        "pm2": "^5.4.3",
         "typescript": "^5.7.3"
     }
 }

@@ -1,5 +1,5 @@
 // 剧情大纲步骤：展示原始创意、剧本摘要与分集剧本
-import { ChevronRight, Loader2, MoreHorizontal } from "lucide-react";
+import { Loader2, MoreHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useScriptOutline } from "@/hooks/useScriptOutline";
 import { useEpisodeScript } from "@/hooks/useEpisodeScript";

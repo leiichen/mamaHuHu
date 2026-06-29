@@ -1,6 +1,6 @@
 // 清晰度与比例选择弹层（首页与画布共用）
 import { useRef, useState } from "react";
-import { Check, ChevronDown, Monitor, Ratio } from "lucide-react";
+import { Check, ChevronDown, Ratio } from "lucide-react";
 import { PromptPopoverPanel } from "@/components/prompt/PromptPopoverPanel";
 import { type PromptPopoverInteractionProps } from "@/components/prompt/promptPopoverUtils";
 import { usePopoverDismiss } from "@/hooks/usePopoverDismiss";
