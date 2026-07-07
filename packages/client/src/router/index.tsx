@@ -1,8 +1,7 @@
 // 路由配置：Hash 路由，嵌套路由在父级布局的 Outlet 中渲染
-import { createHashRouter } from "react-router-dom";
+import { createHashRouter, Navigate } from "react-router-dom";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { RootLayout } from "@/layouts/RootLayout";
-import { HomePage } from "@/pages/HomePage";
 import { LoginPage } from "@/pages/LoginPage";
 import { NovelPage } from "@/pages/NovelPage";
 import { CanvasPage } from "@/pages/CanvasPage";
@@ -41,8 +40,9 @@ export const router = createHashRouter([
         element: <RootLayout />,
         children: [
             {
+                // 根路径默认重定向到短剧 Agent 页（侧边栏"创作"入口已移除）
                 index: true,
-                element: <HomePage />,
+                element: <Navigate to="/novel" replace />,
             },
             {
                 path: "novel",
