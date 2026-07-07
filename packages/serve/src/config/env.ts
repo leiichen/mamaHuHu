@@ -39,15 +39,14 @@ const envSchema = z.object({
     JWT_EXPIRES_IN: z.string().default("7d"),
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_BASE_URL: z.string().url().optional(),
-    ARK_API_KEY: z.string().optional(),
-    ARK_BASE_URL: z
+    HUYA_ART_API_KEY: z.string().optional(),
+    HUYA_ART_BASE_URL: z
         .string()
         .url()
-        .default("https://ark.cn-beijing.volces.com/api/v3"),
-    SEEDREAM_MODEL_5_0: z.string().default("doubao-seedream-5-0-260128"),
-    SEEDREAM_MODEL_4_5: z.string().default("doubao-seedream-4-5-251128"),
-    SEEDANCE_MODEL_2_0: z.string().default("doubao-seedance-2-0-260128"),
-    SEEDANCE_MODEL_2_0_FAST: z.string().default("doubao-seedance-2-0-fast-260128"),
+        .default("https://art.huya.info/openapi/v1"),
+    HUYA_ART_PROVIDER: z.string().default("volcengine"),
+    SEEDREAM_MODEL: z.string().default("doubao-seedream-4-5-251128"),
+    SEEDANCE_MODEL: z.string().default("seedance-2.0-cn"),
     QINIU_ACCESS_KEY: z.string().optional(),
     QINIU_SECRET_KEY: z.string().optional(),
     QINIU_BUCKET: z.string().optional(),

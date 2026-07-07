@@ -6,8 +6,8 @@ vi.mock("../storageUrl.js", () => ({
 
 vi.mock("../../config/env.js", () => ({
     env: {
-        SEEDANCE_MODEL_2_0: "doubao-seedance-2-0-260128",
-        SEEDANCE_MODEL_2_0_FAST: "doubao-seedance-2-0-fast-260128",
+        SEEDANCE_MODEL: "seedance-2.0-cn",
+        HUYA_ART_PROVIDER: "volcengine",
     },
 }));
 
@@ -186,7 +186,7 @@ describe("buildSeedancePromptText", () => {
 });
 
 describe("buildSeedanceGenerateBody", () => {
-    it("组装豆包原生 Seedance 请求体", () => {
+    it("组装虎牙 art 平台 Seedance 请求体", () => {
         expect(
             buildSeedanceGenerateBody({
                 content: "在时代广场跳极乐净土 @asset:29 @duration:5",
@@ -196,29 +196,42 @@ describe("buildSeedanceGenerateBody", () => {
                 reference: [characterAsset],
             }),
         ).toEqual({
-            model: "doubao-seedance-2-0-260128",
-            content: [
-                {
-                    type: "text",
-                    text: `${VOICE_SECTION}\n\n${APPEARANCE_SECTION}\n\n在时代广场跳极乐净土 小美（参考图1） 00:00-00:05`,
-                },
-                { type: "image_url", image_url: { url: "https://cdn.example.com/a.jpg" }, role: "reference_image" },
-                { type: "audio_url", audio_url: { url: "https://cdn.example.com/voice.mp3" }, role: "reference_audio" },
-            ],
-            duration: 5,
-            ratio: "9:16",
-            resolution: "480p",
-            watermark: false,
-            return_last_frame: true,
+            model: {
+                provider: "volcengine",
+                model: "seedance-2.0-cn",
+                type: "image2video",
+            },
+            parameters: {
+                prompt: `${VOICE_SECTION}\n\n${APPEARANCE_SECTION}\n\n在时代广场跳极乐净土 小美（参考图1） 00:00-00:05`,
+                images: ["https://cdn.example.com/a.jpg"],
+                audio: ["https://cdn.example.com/voice.mp3"],
+                roleMode: "reference",
+                aspectRatio: "9:16",
+                resolution: "480p",
+                duration: 5,
+                generateAudio: false,
+                isUploadAsset: true,
+            },
         });
     });
 
-    it("无时长标签时 duration 为 -1", () => {
+    it("无参考素材时 type 为 text2video", () => {
+        const body = buildSeedanceGenerateBody({
+            content: "纯文本镜头",
+            model_id: "seedance-2",
+        });
+
+        expect(body.model.type).toBe("text2video");
+        expect(body.parameters.images).toBeUndefined();
+        expect(body.parameters.audio).toBeUndefined();
+    });
+
+    it("无时长标签时 duration 回退默认 8（虎牙不接受智能时长 -1）", () => {
         expect(
             buildSeedanceGenerateBody({
                 content: "纯文本镜头",
-                model_id: "seedance-2-fast",
-            }).duration,
-        ).toBe(-1);
+                model_id: "seedance-2",
+            }).parameters.duration,
+        ).toBe(8);
     });
 });

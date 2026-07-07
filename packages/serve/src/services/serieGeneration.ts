@@ -115,7 +115,7 @@ export async function submitSerieFragmentSeedanceTask(
     serieId: number,
     fragmentId: number,
     body: SeedanceGenerateBody,
-    arkApiKey?: string,
+    huyaArtApiKey?: string,
 ) {
     await assertProjectOwner(userId, projectId);
 
@@ -125,7 +125,7 @@ export async function submitSerieFragmentSeedanceTask(
         throw new NotFoundError("分镜不存在");
     }
 
-    const { taskId } = await seedanceVideoService.createTask(body, arkApiKey);
+    const { taskId } = await seedanceVideoService.createTask(body, huyaArtApiKey);
 
     return {
         taskId,
@@ -142,7 +142,7 @@ export async function pollSerieFragmentSeedanceTask(
     serieId: number,
     fragmentId: number,
     taskId: string,
-    arkApiKey?: string,
+    huyaArtApiKey?: string,
 ): Promise<SerieGenerationPollResult> {
     await assertProjectOwner(userId, projectId);
 
@@ -158,7 +158,7 @@ export async function pollSerieFragmentSeedanceTask(
         throw new NotFoundError("分镜不存在");
     }
 
-    const task = await seedanceVideoService.getTask(taskId, arkApiKey);
+    const task = await seedanceVideoService.getTask(taskId, huyaArtApiKey);
 
     if (task.status === "queued" || task.status === "running") {
         return {

@@ -1,22 +1,22 @@
-// 顶栏 API Key 设置弹窗：本地保存火山方舟与 OpenAI Key，并随请求发送给服务端
+// 顶栏 API Key 设置弹窗：本地保存虎牙 art 与 OpenAI Key，并随请求发送给服务端
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { clearArkApiKey, loadArkApiKey, saveArkApiKey } from "@/lib/arkApiKeyStorage";
+import { clearHuyaArtApiKey, loadHuyaArtApiKey, saveHuyaArtApiKey } from "@/lib/huyaArtApiKeyStorage";
 import {
     clearOpenaiApiKey,
     loadOpenaiApiKey,
     saveOpenaiApiKey,
 } from "@/lib/openaiApiKeyStorage";
 
-type ArkApiKeySettingsDialogProps = {
+type HuyaArtApiKeySettingsDialogProps = {
     open: boolean;
     onClose: () => void;
 };
 
 // 渲染 API Key 设置弹窗
-export function ArkApiKeySettingsDialog({ open, onClose }: ArkApiKeySettingsDialogProps) {
-    // arkApiKeyInput 火山方舟 Key 输入
-    const [arkApiKeyInput, setArkApiKeyInput] = useState("");
+export function HuyaArtApiKeySettingsDialog({ open, onClose }: HuyaArtApiKeySettingsDialogProps) {
+    // huyaArtApiKeyInput 虎牙 art Key 输入
+    const [huyaArtApiKeyInput, setHuyaArtApiKeyInput] = useState("");
     // openaiApiKeyInput OpenAI Key 输入
     const [openaiApiKeyInput, setOpenaiApiKeyInput] = useState("");
 
@@ -25,22 +25,22 @@ export function ArkApiKeySettingsDialog({ open, onClose }: ArkApiKeySettingsDial
             return;
         }
 
-        setArkApiKeyInput(loadArkApiKey());
+        setHuyaArtApiKeyInput(loadHuyaArtApiKey());
         setOpenaiApiKeyInput(loadOpenaiApiKey());
     }, [open]);
 
     // 保存 Key 到本地存储
     const handleSave = useCallback(() => {
-        saveArkApiKey(arkApiKeyInput);
+        saveHuyaArtApiKey(huyaArtApiKeyInput);
         saveOpenaiApiKey(openaiApiKeyInput);
         onClose();
-    }, [arkApiKeyInput, onClose, openaiApiKeyInput]);
+    }, [huyaArtApiKeyInput, onClose, openaiApiKeyInput]);
 
     // 清除本地 Key
     const handleClear = useCallback(() => {
-        clearArkApiKey();
+        clearHuyaArtApiKey();
         clearOpenaiApiKey();
-        setArkApiKeyInput("");
+        setHuyaArtApiKeyInput("");
         setOpenaiApiKeyInput("");
         onClose();
     }, [onClose]);
@@ -62,15 +62,15 @@ export function ArkApiKeySettingsDialog({ open, onClose }: ArkApiKeySettingsDial
 
                 <label className="mt-4 block">
                     <span className="mb-1.5 block text-xs font-medium text-slate-600">
-                        火山方舟 API KEY
+                        虎牙 art API KEY
                     </span>
                     <input
                         type="password"
                         autoComplete="off"
                         spellCheck={false}
-                        value={arkApiKeyInput}
-                        onChange={(event) => setArkApiKeyInput(event.target.value)}
-                        placeholder="请输入 ARK_API_KEY"
+                        value={huyaArtApiKeyInput}
+                        onChange={(event) => setHuyaArtApiKeyInput(event.target.value)}
+                        placeholder="请输入 HUYA_ART_API_KEY"
                         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                     />
                 </label>

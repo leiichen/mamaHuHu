@@ -1,6 +1,6 @@
 import type { AuthRequest } from "../../middleware/jwt.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { readArkApiKeyFromRequest } from "../../lib/arkApiKey.js";
+import { readHuyaArtApiKeyFromRequest } from "../../lib/huyaArtApiKey.js";
 import { validateMiddleware } from "../../middleware/validate.js";
 import { buildSeedanceGenerateBody } from "../../lib/buildSeedanceGenerateBody.js";
 import { listSerieFragmentReferenceAssetsByFragmentId } from "../../services/serieFragment.js";
@@ -33,14 +33,14 @@ export const handler = asyncHandler<AuthRequest>(async (req, res) => {
         video_style_id: videoStyleId,
     });
 
-    const arkApiKey = readArkApiKeyFromRequest(req);
+    const huyaArtApiKey = readHuyaArtApiKeyFromRequest(req);
     const result = await submitSerieFragmentSeedanceTask(
         req.user!.userId,
         projectId,
         serieId,
         fragmentId,
         seedanceBody,
-        arkApiKey,
+        huyaArtApiKey,
     );
 
     return success(res, result, "生成任务已提交");

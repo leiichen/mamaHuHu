@@ -28,7 +28,7 @@ export function createApp() {
                 "X-Timestamp",
                 "X-Nonce",
                 "X-Signature",
-                "X-Ark-Api-Key",
+                "X-Huya-Art-Key",
                 "X-Openai-Api-Key",
             ],
         }),

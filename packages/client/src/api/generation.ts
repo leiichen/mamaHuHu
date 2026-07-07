@@ -6,8 +6,8 @@ import type {
     GenerationResolution,
 } from "@/lib/generationOptions";
 
-// ImageGenerationModelId 生图模型 ID
-export type ImageGenerationModelId = "seedream-5.0" | "seedream-4.5";
+// ImageGenerationModelId 生图模型 ID（虎牙 art 平台仅上架 Seedream 4.5）
+export type ImageGenerationModelId = "seedream-4.5";
 
 // GenerateImagePayload 图片生成请求体
 export type GenerateImagePayload = {
@@ -32,10 +32,11 @@ export type GenerateImageResult = {
     created: number;
 };
 
-// 调用 Seedream 生成图片
+// 调用 Seedream 生成图片（服务端内部轮询至完成，预留 90s 超时）
 export function generateImage(payload: GenerateImagePayload) {
     return request<GenerateImageResult>("/generation/image", {
         method: "POST",
         data: payload,
+        timeout: 90_000,
     });
 }

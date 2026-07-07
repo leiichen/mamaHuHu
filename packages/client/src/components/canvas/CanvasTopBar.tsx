@@ -1,7 +1,7 @@
 // 画布顶栏：左上角返回与保存状态，右上角 API KEY 设置
 import { ChevronLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { ArkApiKeySettingsButton } from "@/components/home/ArkApiKeySettingsButton";
+import { HuyaArtApiKeySettingsButton } from "@/components/home/HuyaArtApiKeySettingsButton";
 import { CanvasToolbarTooltip } from "@/components/canvas/CanvasToolbarTooltip";
 import { useAppSelector } from "@/store/hooks";
 
@@ -39,7 +39,7 @@ export function CanvasTopBar({ title = "资产库编辑" }: CanvasTopBarProps) {
                     ) : null}
                 </div>
 
-                <ArkApiKeySettingsButton variant="canvas" tooltipLabel="API KEY" />
+                <HuyaArtApiKeySettingsButton variant="canvas" tooltipLabel="API KEY" />
             </div>
         </div>
     );

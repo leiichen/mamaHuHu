@@ -1,6 +1,6 @@
 import axios, { type AxiosRequestConfig } from "axios";
 import { ApiError, type ApiResponse } from "@/api/types";
-import { ARK_API_KEY_HEADER, loadArkApiKey } from "@/lib/arkApiKeyStorage";
+import { HUYA_ART_API_KEY_HEADER, loadHuyaArtApiKey } from "@/lib/huyaArtApiKeyStorage";
 import { OPENAI_API_KEY_HEADER, loadOpenaiApiKey } from "@/lib/openaiApiKeyStorage";
 import { isUnauthorizedResponse, redirectToLoginOnUnauthorized } from "@/lib/authRedirect";
 import { attachRequestSignature } from "@/lib/requestSign";
@@ -47,10 +47,10 @@ http.interceptors.request.use(async (config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
 
-    const arkApiKey = loadArkApiKey();
+    const huyaArtApiKey = loadHuyaArtApiKey();
 
-    if (arkApiKey) {
-        config.headers.set(ARK_API_KEY_HEADER, arkApiKey);
+    if (huyaArtApiKey) {
+        config.headers.set(HUYA_ART_API_KEY_HEADER, huyaArtApiKey);
     }
 
     const openaiApiKey = loadOpenaiApiKey();

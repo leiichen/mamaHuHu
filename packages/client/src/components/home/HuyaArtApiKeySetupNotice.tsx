@@ -1,11 +1,11 @@
 // 全局 API Key 配置提醒：服务端未配置时在右上角展示 Notice
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { fetchArkApiKeyStatus, fetchOpenaiApiKeyStatus } from "@/api/config";
+import { fetchHuyaArtApiKeyStatus, fetchOpenaiApiKeyStatus } from "@/api/config";
 import { TopRightNotice } from "@/components/ui/top-right-notice";
 import {
-    ARK_API_KEY_CHANGED_EVENT,
-    hasCustomArkApiKey,
-} from "@/lib/arkApiKeyStorage";
+    HUYA_ART_API_KEY_CHANGED_EVENT,
+    hasCustomHuyaArtApiKey,
+} from "@/lib/huyaArtApiKeyStorage";
 import {
     OPENAI_API_KEY_CHANGED_EVENT,
     hasCustomOpenaiApiKey,
@@ -14,14 +14,14 @@ import { selectIsAuthenticated } from "@/store/authSlice";
 import { useAppSelector } from "@/store/hooks";
 
 // 渲染全局 API Key 配置提醒
-export function ArkApiKeySetupNotice() {
+export function HuyaArtApiKeySetupNotice() {
     const isAuthenticated = useAppSelector(selectIsAuthenticated);
-    // serverArkConfigured 服务端是否已配置 ARK API Key
-    const [serverArkConfigured, setServerArkConfigured] = useState<boolean | null>(null);
+    // serverHuyaArtConfigured 服务端是否已配置虎牙 art API Key
+    const [serverHuyaArtConfigured, setServerHuyaArtConfigured] = useState<boolean | null>(null);
     // serverOpenaiConfigured 服务端是否已配置 OpenAI API Key
     const [serverOpenaiConfigured, setServerOpenaiConfigured] = useState<boolean | null>(null);
-    // hasClientArkKey 用户是否已在本地配置 ARK Key
-    const [hasClientArkKey, setHasClientArkKey] = useState(hasCustomArkApiKey);
+    // hasClientHuyaArtKey 用户是否已在本地配置虎牙 art Key
+    const [hasClientHuyaArtKey, setHasClientHuyaArtKey] = useState(hasCustomHuyaArtApiKey);
     // hasClientOpenaiKey 用户是否已在本地配置 OpenAI Key
     const [hasClientOpenaiKey, setHasClientOpenaiKey] = useState(hasCustomOpenaiApiKey);
     // dismissed 用户是否已手动关闭本次会话提醒
@@ -29,7 +29,7 @@ export function ArkApiKeySetupNotice() {
 
     useEffect(() => {
         if (!isAuthenticated) {
-            setServerArkConfigured(null);
+            setServerHuyaArtConfigured(null);
             setServerOpenaiConfigured(null);
             return;
         }
@@ -37,15 +37,15 @@ export function ArkApiKeySetupNotice() {
         const controller = new AbortController();
 
         void Promise.all([
-            fetchArkApiKeyStatus(controller.signal),
+            fetchHuyaArtApiKeyStatus(controller.signal),
             fetchOpenaiApiKeyStatus(controller.signal),
         ])
-            .then(([arkStatus, openaiStatus]) => {
-                setServerArkConfigured(arkStatus.configured);
+            .then(([huyaArtStatus, openaiStatus]) => {
+                setServerHuyaArtConfigured(huyaArtStatus.configured);
                 setServerOpenaiConfigured(openaiStatus.configured);
             })
             .catch(() => {
-                setServerArkConfigured(null);
+                setServerHuyaArtConfigured(null);
                 setServerOpenaiConfigured(null);
             });
 
@@ -56,22 +56,22 @@ export function ArkApiKeySetupNotice() {
 
     useEffect(() => {
         const handleApiKeyChanged = () => {
-            const nextHasClientArkKey = hasCustomArkApiKey();
+            const nextHasClientHuyaArtKey = hasCustomHuyaArtApiKey();
             const nextHasClientOpenaiKey = hasCustomOpenaiApiKey();
 
-            setHasClientArkKey(nextHasClientArkKey);
+            setHasClientHuyaArtKey(nextHasClientHuyaArtKey);
             setHasClientOpenaiKey(nextHasClientOpenaiKey);
 
-            if (!nextHasClientArkKey && !nextHasClientOpenaiKey) {
+            if (!nextHasClientHuyaArtKey && !nextHasClientOpenaiKey) {
                 setDismissed(false);
             }
         };
 
-        window.addEventListener(ARK_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
+        window.addEventListener(HUYA_ART_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
         window.addEventListener(OPENAI_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
 
         return () => {
-            window.removeEventListener(ARK_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
+            window.removeEventListener(HUYA_ART_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
             window.removeEventListener(OPENAI_API_KEY_CHANGED_EVENT, handleApiKeyChanged);
         };
     }, []);
@@ -80,8 +80,8 @@ export function ArkApiKeySetupNotice() {
     const noticeMessage = useMemo(() => {
         const missing: string[] = [];
 
-        if (serverArkConfigured === false && !hasClientArkKey) {
-            missing.push("火山方舟 API KEY");
+        if (serverHuyaArtConfigured === false && !hasClientHuyaArtKey) {
+            missing.push("虎牙 art API KEY");
         }
 
         if (serverOpenaiConfigured === false && !hasClientOpenaiKey) {
@@ -93,7 +93,7 @@ export function ArkApiKeySetupNotice() {
         }
 
         return `服务端未配置 ${missing.join("、")}，请点击右上角设置按钮，在弹窗中填写对应 API KEY。`;
-    }, [hasClientArkKey, hasClientOpenaiKey, serverArkConfigured, serverOpenaiConfigured]);
+    }, [hasClientHuyaArtKey, hasClientOpenaiKey, serverHuyaArtConfigured, serverOpenaiConfigured]);
 
     // handleCloseNotice 手动关闭提醒
     const handleCloseNotice = useCallback(() => {

@@ -10,8 +10,8 @@ export type GenerationModelOption = {
 // GenerationMediaType 生成媒体类型
 export type GenerationMediaType = "image" | "video";
 
-// GenerationResolution 图片可选清晰度
-export type GenerationResolution = "3K" | "4K";
+// GenerationResolution 图片可选清晰度（虎牙 art 平台仅支持 2K/4K）
+export type GenerationResolution = "2K" | "4K";
 
 // VideoResolution 视频可选分辨率
 export type VideoResolution = "480p" | "720p";
@@ -33,7 +33,7 @@ export type GenerationAspectRatioId =
     | "1:1";
 
 // GENERATION_RESOLUTION_OPTIONS 图片清晰度列表
-export const GENERATION_RESOLUTION_OPTIONS: GenerationResolution[] = ["3K", "4K"];
+export const GENERATION_RESOLUTION_OPTIONS: GenerationResolution[] = ["2K", "4K"];
 
 // VIDEO_RESOLUTION_OPTIONS 视频分辨率列表
 export const VIDEO_RESOLUTION_OPTIONS: VideoResolution[] = ["480p", "720p"];
@@ -77,31 +77,21 @@ export const GENERATION_ASPECT_RATIO_SHAPES: Record<
     "1:1": { width: 24, height: 24 },
 };
 
-// IMAGE_GENERATION_MODELS 生图模型列表
+// IMAGE_GENERATION_MODELS 生图模型列表（虎牙 art 平台仅上架 Seedream 4.5）
 export const IMAGE_GENERATION_MODELS: GenerationModelOption[] = [
-    {
-        id: "seedream-5.0",
-        label: "Seedream 5.0",
-        description: "更智能的理解与推理，支持联网搜索与多图融合。",
-    },
     {
         id: "seedream-4.5",
         label: "Seedream 4.5",
-        description: "擅长图片编辑与复杂场景还原，支持 2K/4K 高清输出。",
+        description: "虎牙 art 平台 · 即梦图片 4.5，擅长图片编辑与复杂场景还原，支持 2K/4K 高清输出。",
     },
 ];
 
-// VIDEO_GENERATION_MODELS 视频模型列表
+// VIDEO_GENERATION_MODELS 视频模型列表（虎牙 art 平台仅上架 Seedance 2.0 Pro）
 export const VIDEO_GENERATION_MODELS: GenerationModelOption[] = [
     {
         id: "seedance-2",
-        label: "Seedance2.0",
-        description: "高质量视频生成，画面更稳定。",
-    },
-    {
-        id: "seedance-2-fast",
-        label: "Seedance2.0Fast",
-        description: "更快生成速度，适合快速迭代。",
+        label: "Seedance 2.0 Pro",
+        description: "虎牙 art 平台 · 豆包 Seedance 2.0 Pro，高质量视频生成，画面更稳定。",
     },
 ];
 

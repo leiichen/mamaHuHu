@@ -1,0 +1,1 @@
+{"model":{"provider":"volcengine","model":"doubao-seedream-4-5-251128","type":"text2image"},"parameters":{"prompt":"一只可爱的橘猫坐在窗台上,阳光温暖","sequential_image_generation":false,"size":"2048x2048","max_images":1}}

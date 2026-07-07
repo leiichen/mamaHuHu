@@ -46,7 +46,7 @@ function AspectRatioPreview({ ratioId }: { ratioId: GenerationAspectRatioId | Vi
 export function OutputSettingsPopover({
     mediaType = "image",
     defaultAspectRatio = "9:16",
-    defaultResolution = "3K",
+    defaultResolution = "2K",
     labelMode = "full",
     interactionScope = "default",
     popoverPlacement = "top",

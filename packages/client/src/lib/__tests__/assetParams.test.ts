@@ -52,9 +52,9 @@ describe("assetParams", () => {
                 position: { x: 1, y: 2 },
                 generation: {
                     prompt: "cat",
-                    modelId: "seedream-5.0",
+                    modelId: "seedream-4.5",
                     aspectRatio: "1:1",
-                    resolution: "3K",
+                    resolution: "2K",
                 },
             },
         };
@@ -89,16 +89,16 @@ describe("assetParams", () => {
     it("readAssetGenerationSettings 校验必填字段", () => {
         const valid = buildAssetParamsWithGeneration(null, {
             prompt: "dog",
-            modelId: "seedream-5.0",
+            modelId: "seedream-4.5",
             aspectRatio: "16:9",
-            resolution: "3K",
+            resolution: "2K",
         });
 
         expect(readAssetGenerationSettings(valid)).toEqual({
             prompt: "dog",
-            modelId: "seedream-5.0",
+            modelId: "seedream-4.5",
             aspectRatio: "16:9",
-            resolution: "3K",
+            resolution: "2K",
         });
 
         expect(readAssetGenerationSettings({ canvas: { generation: { prompt: "x" } } })).toBeNull();

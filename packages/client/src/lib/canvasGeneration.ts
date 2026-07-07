@@ -32,7 +32,7 @@ export {
 
 // 解析已保存的模型 ID，无效时回退到默认值
 export function resolveSavedImageModelId(modelId: string | undefined) {
-    const defaultModelId = IMAGE_GENERATION_MODELS[0]?.id ?? "seedream-5.0";
+    const defaultModelId = IMAGE_GENERATION_MODELS[0]?.id ?? "seedream-4.5";
     const matchedModel = IMAGE_GENERATION_MODELS.find((option) => option.id === modelId);
 
     return matchedModel?.id ?? defaultModelId;
@@ -66,7 +66,7 @@ export function resolveSavedResolution(resolution: string | undefined): Generati
         return resolution as GenerationResolution;
     }
 
-    return "3K";
+    return "2K";
 }
 
 // 解析已保存的图片风格 ID

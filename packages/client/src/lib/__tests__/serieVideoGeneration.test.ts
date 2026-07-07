@@ -13,7 +13,7 @@ describe("serieVideoGeneration", () => {
         });
     });
 
-    it("读取并校验 params.videoGeneration", () => {
+    it("读取并校验 params.videoGeneration（未知模型 id 回退到默认）", () => {
         expect(
             resolveSerieVideoGenerationDefaults({
                 videoGeneration: {
@@ -24,7 +24,7 @@ describe("serieVideoGeneration", () => {
                 },
             }),
         ).toEqual({
-            modelId: "seedance-2-fast",
+            modelId: "seedance-2",
             aspectRatio: "16:9",
             resolution: "720p",
             videoStyleId: "pixel-art",

@@ -1,6 +1,6 @@
 // 分集编辑页：顶部导航栏
 import { ChevronLeft } from "lucide-react";
-import { ArkApiKeySettingsButton } from "@/components/home/ArkApiKeySettingsButton";
+import { HuyaArtApiKeySettingsButton } from "@/components/home/HuyaArtApiKeySettingsButton";
 import { ImageStylePopover } from "@/components/prompt/ImageStylePopover";
 import { ModelSelectPopover } from "@/components/prompt/ModelSelectPopover";
 import { OutputSettingsPopover } from "@/components/prompt/OutputSettingsPopover";
@@ -77,7 +77,7 @@ export function EpisodeEditHeader({
                     value={videoResolution}
                     onValueChange={onVideoResolutionChange}
                 />
-                <ArkApiKeySettingsButton variant="episode" />
+                <HuyaArtApiKeySettingsButton variant="episode" />
             </div>
         </header>
     );

@@ -90,7 +90,7 @@ function CanvasNodeEditorPanelComponent({ assetId, kind }: CanvasNodeEditorPanel
         IMAGE_GENERATION_MODELS[0]?.id as ImageGenerationModelId,
     );
     const [aspectRatio, setAspectRatio] = useState<GenerationAspectRatioId>("auto");
-    const [resolution, setResolution] = useState<GenerationResolution>("3K");
+    const [resolution, setResolution] = useState<GenerationResolution>("2K");
     const [imageStyleId, setImageStyleId] = useState<ImageStyleId | undefined>(undefined);
     const canSubmit = !isAudioNode && showSubmitButton && prompt.trim().length > 0 && !generating;
     const promptPlaceholder = isAudioNode ? AUDIO_PROMPT_PLACEHOLDER : IMAGE_PROMPT_PLACEHOLDER;
@@ -111,7 +111,7 @@ function CanvasNodeEditorPanelComponent({ assetId, kind }: CanvasNodeEditorPanel
             setPrompt("");
             setModelId(IMAGE_GENERATION_MODELS[0]?.id as ImageGenerationModelId);
             setAspectRatio("auto");
-            setResolution("3K");
+            setResolution("2K");
             setImageStyleId(undefined);
         } else {
             setPrompt(nextPrompt);

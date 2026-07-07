@@ -1,5 +1,9 @@
 // 允许服务端代传的远程媒体域名后缀（防止 SSRF）
-const ALLOWED_REMOTE_HOST_SUFFIXES = [".volces.com", ".volcengineapi.com"];
+const ALLOWED_REMOTE_HOST_SUFFIXES = [
+    ".volces.com",
+    ".volcengineapi.com",
+    ".aliyuncs.com", // 虎牙 art 平台返回的 OSS 媒体地址
+];
 
 // 根据 Content-Type 或 URL 推断远程文件扩展名
 export function inferRemoteFileExt(contentType: string | null, remoteUrl: string): string {

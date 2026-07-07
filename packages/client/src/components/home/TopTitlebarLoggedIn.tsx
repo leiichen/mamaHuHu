@@ -2,7 +2,7 @@
 import { Bird, LogOut } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArkApiKeySettingsButton } from "@/components/home/ArkApiKeySettingsButton";
+import { HuyaArtApiKeySettingsButton } from "@/components/home/HuyaArtApiKeySettingsButton";
 import { usePopoverDismiss } from "@/hooks/usePopoverDismiss";
 import { cn } from "@/lib/utils";
 import { logout } from "@/store/authSlice";
@@ -64,7 +64,7 @@ export function TopTitlebarLoggedIn() {
     return (
         <>
             <div className="flex items-center gap-2">
-                <ArkApiKeySettingsButton variant="titlebar" />
+                <HuyaArtApiKeySettingsButton variant="titlebar" />
 
                 <div
                     ref={rootRef}

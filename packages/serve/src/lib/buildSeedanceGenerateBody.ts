@@ -4,11 +4,14 @@ import { resolveImageStylePrompt, type ImageStyleId } from "./imageStyles.js";
 import {
     replaceDurationMentionsWithTimeRanges,
     resolveSeedanceDurationFromContent,
+    SEEDANCE_SMART_DURATION,
 } from "./fragmentContentDuration.js";
 import {
-    resolveSeedanceModelEndpoint,
+    resolveSeedanceModel,
+    resolveSeedanceProvider,
     resolveSeedanceRatio,
     resolveSeedanceResolution,
+    resolveSeedanceType,
 } from "./seedanceModels.js";
 
 // ASSET_MENTION_TOKEN_PATTERN 分镜脚本中的 @asset 占位符
@@ -30,21 +33,33 @@ const SEEDANCE_CHARACTER_APPEARANCE_SECTION_HEADER =
 const SEEDANCE_SCENE_SECTION_HEADER =
     "【强制约束：场景】以下场景的空间结构、环境陈设、光影氛围必须与对应参考图严格一致，严禁替换为其他场景或大幅偏离参考画面：";
 
-// SeedanceContentItem 豆包原生 content 数组项
+// SeedanceContentItem 历史遗留类型（虎牙不再使用 content 多模态数组，保留导出仅为兼容）
 export type SeedanceContentItem =
     | { type: "text"; text: string }
     | { type: "image_url"; image_url: { url: string }; role: "reference_image" }
     | { type: "audio_url"; audio_url: { url: string }; role: "reference_audio" };
 
-// SeedanceGenerateBody 提交火山方舟 Seedance 的请求体
-export type SeedanceGenerateBody = {
-    model: string;
-    content: SeedanceContentItem[];
-    duration: number;
-    ratio: string;
+// SeedanceGenerateParameters 虎牙 art 平台 Seedance 的 parameters 结构
+export type SeedanceGenerateParameters = {
+    prompt: string;
+    images?: string[];
+    audio?: string[];
+    roleMode: "reference" | "frame";
+    aspectRatio: string;
     resolution: string;
-    watermark: boolean;
-    return_last_frame: boolean;
+    duration: number;
+    generateAudio: boolean;
+    isUploadAsset: boolean;
+};
+
+// SeedanceGenerateBody 提交虎牙 art 平台 Seedance 的请求体
+export type SeedanceGenerateBody = {
+    model: {
+        provider: string;
+        model: string;
+        type: "text2video" | "image2video";
+    };
+    parameters: SeedanceGenerateParameters;
 };
 
 // BuildSeedanceGenerateBodyInput 组装 Seedance 请求体的输入
@@ -347,50 +362,61 @@ export function buildSeedancePromptText(
     return sections.join("\n\n");
 }
 
-// 从引用资产组装 Seedance content 多模态数组
-function buildSeedanceContentItems(
-    content: string | undefined,
-    reference: ApiAssetPayload[] | undefined,
-    videoStyleId?: ImageStyleId,
-): SeedanceContentItem[] {
-    const catalog = buildSeedanceReferenceCatalog(reference);
-    const promptText = buildSeedancePromptText(content, reference, catalog, videoStyleId);
-    const items: SeedanceContentItem[] = [];
+// 虎牙 Seedance 默认视频时长（秒）。虎牙 duration min=4 max=15，智能时长 -1 不被接受，故回退默认 8
+const SEEDANCE_DEFAULT_DURATION_SEC = 8;
 
-    if (promptText.length > 0) {
-        items.push({ type: "text", text: promptText });
+// 从引用资产组装 Seedance 的虎牙扁平 parameters 结构
+function buildSeedanceParameters(
+    input: BuildSeedanceGenerateBodyInput,
+): SeedanceGenerateParameters {
+    const catalog = buildSeedanceReferenceCatalog(input.reference);
+    const promptText = buildSeedancePromptText(
+        input.content,
+        input.reference,
+        catalog,
+        input.video_style_id,
+    );
+
+    // 智能时长 -1 在虎牙不合法，回退到默认 8 秒；其余 1-15 秒原样透传（虎牙要求 min 4，<4 也回退默认）
+    const rawDuration = resolveSeedanceDurationFromContent(input.content);
+    const duration =
+        rawDuration === SEEDANCE_SMART_DURATION || rawDuration < 4
+            ? SEEDANCE_DEFAULT_DURATION_SEC
+            : rawDuration;
+
+    const parameters: SeedanceGenerateParameters = {
+        prompt: promptText,
+        roleMode: "reference",
+        aspectRatio: resolveSeedanceRatio(input.aspect_ratio),
+        resolution: resolveSeedanceResolution(input.resolution),
+        duration,
+        generateAudio: false,
+        isUploadAsset: true,
+    };
+
+    if (catalog.images.length > 0) {
+        parameters.images = catalog.images.map((image) => image.url);
     }
 
-    for (const image of catalog.images) {
-        items.push({
-            type: "image_url",
-            image_url: { url: image.url },
-            role: "reference_image",
-        });
+    if (catalog.audios.length > 0) {
+        parameters.audio = catalog.audios.map((audio) => audio.url);
     }
 
-    for (const audio of catalog.audios) {
-        items.push({
-            type: "audio_url",
-            audio_url: { url: audio.url },
-            role: "reference_audio",
-        });
-    }
-
-    return items;
+    return parameters;
 }
 
-// 将分镜生成参数转为提交 Seedance 的请求体
+// 将分镜生成参数转为提交虎牙 Seedance 的请求体
 export function buildSeedanceGenerateBody(
     input: BuildSeedanceGenerateBodyInput,
 ): SeedanceGenerateBody {
+    const referenceLength = input.reference?.length ?? 0;
+
     return {
-        model: resolveSeedanceModelEndpoint(input.model_id),
-        content: buildSeedanceContentItems(input.content, input.reference, input.video_style_id),
-        duration: resolveSeedanceDurationFromContent(input.content),
-        ratio: resolveSeedanceRatio(input.aspect_ratio),
-        resolution: resolveSeedanceResolution(input.resolution),
-        watermark: false,
-        return_last_frame: true,
+        model: {
+            provider: resolveSeedanceProvider(),
+            model: resolveSeedanceModel(input.model_id),
+            type: resolveSeedanceType(referenceLength),
+        },
+        parameters: buildSeedanceParameters(input),
     };
 }

@@ -1,6 +1,6 @@
 import type { AuthRequest } from "../../middleware/jwt.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
-import { readArkApiKeyFromRequest } from "../../lib/arkApiKey.js";
+import { readHuyaArtApiKeyFromRequest } from "../../lib/huyaArtApiKey.js";
 import { validateMiddleware } from "../../middleware/validate.js";
 import {
     fetchSerieDetailAfterGeneration,
@@ -20,14 +20,14 @@ export const handler = asyncHandler<AuthRequest>(async (req, res) => {
         task_id: taskId,
     } = req.body as PollSerieGenerateInput;
 
-    const arkApiKey = readArkApiKeyFromRequest(req);
+    const huyaArtApiKey = readHuyaArtApiKeyFromRequest(req);
     const pollResult = await pollSerieFragmentSeedanceTask(
         req.user!.userId,
         projectId,
         serieId,
         fragmentId,
         taskId,
-        arkApiKey,
+        huyaArtApiKey,
     );
 
     if (pollResult.status === "succeeded") {

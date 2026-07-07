@@ -1,16 +1,16 @@
-// API KEY 设置按钮：打开火山方舟 Key 配置弹窗
+// API KEY 设置按钮：打开虎牙 art Key 配置弹窗
 import { Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { CanvasToolbarTooltip } from "@/components/canvas/CanvasToolbarTooltip";
-import { ArkApiKeySettingsDialog } from "@/components/home/ArkApiKeySettingsDialog";
-import { hasCustomArkApiKey, ARK_API_KEY_CHANGED_EVENT } from "@/lib/arkApiKeyStorage";
+import { HuyaArtApiKeySettingsDialog } from "@/components/home/HuyaArtApiKeySettingsDialog";
+import { hasCustomHuyaArtApiKey, HUYA_ART_API_KEY_CHANGED_EVENT } from "@/lib/huyaArtApiKeyStorage";
 import {
     hasCustomOpenaiApiKey,
     OPENAI_API_KEY_CHANGED_EVENT,
 } from "@/lib/openaiApiKeyStorage";
 import { cn } from "@/lib/utils";
 
-type ArkApiKeySettingsButtonProps = {
+type HuyaArtApiKeySettingsButtonProps = {
     variant?: "titlebar" | "canvas" | "episode";
     tooltipLabel?: string;
     className?: string;
@@ -27,28 +27,28 @@ const variantClassMap = {
 } as const;
 
 // 渲染 API KEY 设置按钮与弹窗
-export function ArkApiKeySettingsButton({
+export function HuyaArtApiKeySettingsButton({
     variant = "titlebar",
     tooltipLabel,
     className,
-}: ArkApiKeySettingsButtonProps) {
+}: HuyaArtApiKeySettingsButtonProps) {
     // settingsOpen 设置弹窗是否打开
     const [settingsOpen, setSettingsOpen] = useState(false);
     // usingCustomKey 是否已配置任一自定义 Key
     const [usingCustomKey, setUsingCustomKey] = useState(
-        () => hasCustomArkApiKey() || hasCustomOpenaiApiKey(),
+        () => hasCustomHuyaArtApiKey() || hasCustomOpenaiApiKey(),
     );
 
     useEffect(() => {
         const refreshCustomKeyState = () => {
-            setUsingCustomKey(hasCustomArkApiKey() || hasCustomOpenaiApiKey());
+            setUsingCustomKey(hasCustomHuyaArtApiKey() || hasCustomOpenaiApiKey());
         };
 
-        window.addEventListener(ARK_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
+        window.addEventListener(HUYA_ART_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
         window.addEventListener(OPENAI_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
 
         return () => {
-            window.removeEventListener(ARK_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
+            window.removeEventListener(HUYA_ART_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
             window.removeEventListener(OPENAI_API_KEY_CHANGED_EVENT, refreshCustomKeyState);
         };
     }, []);
@@ -61,7 +61,7 @@ export function ArkApiKeySettingsButton({
     // 关闭设置弹窗并刷新自定义 Key 状态
     const handleCloseSettings = useCallback(() => {
         setSettingsOpen(false);
-        setUsingCustomKey(hasCustomArkApiKey() || hasCustomOpenaiApiKey());
+        setUsingCustomKey(hasCustomHuyaArtApiKey() || hasCustomOpenaiApiKey());
     }, []);
 
     const triggerButton = (
@@ -88,7 +88,7 @@ export function ArkApiKeySettingsButton({
                 triggerButton
             )}
 
-            <ArkApiKeySettingsDialog open={settingsOpen} onClose={handleCloseSettings} />
+            <HuyaArtApiKeySettingsDialog open={settingsOpen} onClose={handleCloseSettings} />
         </>
     );
 }

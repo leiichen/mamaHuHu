@@ -1,7 +1,7 @@
 import { request } from "@/api/http";
 
-// ArkApiKeyStatus 服务端 ARK API Key 配置状态
-export type ArkApiKeyStatus = {
+// HuyaArtApiKeyStatus 服务端虎牙 art API Key 配置状态
+export type HuyaArtApiKeyStatus = {
     configured: boolean;
 };
 
@@ -10,9 +10,9 @@ export type OpenaiApiKeyStatus = {
     configured: boolean;
 };
 
-// 查询服务端是否已配置 ARK API Key
-export function fetchArkApiKeyStatus(signal?: AbortSignal) {
-    return request<ArkApiKeyStatus>("/config/ark_key", {
+// 查询服务端是否已配置虎牙 art API Key
+export function fetchHuyaArtApiKeyStatus(signal?: AbortSignal) {
+    return request<HuyaArtApiKeyStatus>("/config/art_key", {
         method: "GET",
         signal,
     });
