@@ -1,6 +1,7 @@
 // 应用壳左侧边栏：创作 / 短剧 Agent / 资产
 import { NavLink } from "react-router-dom";
-import { Bird, ChevronLeft, PanelLeftOpen } from "lucide-react";
+import { ChevronLeft, PanelLeftOpen } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { cn } from "@/lib/utils";
 import { SIDEBAR_NAV_ITEMS } from "@/data/sidebarNav";
 
@@ -27,9 +28,9 @@ function BrandContent() {
     return (
         <>
             <span className="inline-flex size-8 shrink-0 items-center justify-center text-slate-700">
-                <Bird className="size-5" strokeWidth={2.2} />
+                <img src={logoImg} alt="虎跃影画" className="size-7" />
             </span>
-            <span className="truncate text-sm font-semibold text-slate-800">小麻雀</span>
+            <span className="truncate text-sm font-semibold text-slate-800">虎跃影画</span>
         </>
     );
 }
@@ -47,21 +48,22 @@ function SidebarBrand({
             <button
                 type="button"
                 aria-label="展开侧边栏"
-                className="pointer-events-auto absolute top-1/2 left-3 flex w-[5.75rem] -translate-y-1/2 cursor-pointer items-center rounded-xl"
+                className="pointer-events-auto absolute top-1/2 left-3 flex w-[6.5rem] -translate-y-1/2 cursor-pointer items-center rounded-xl"
                 onClick={onExpand}
             >
                 <span className="group flex h-8 w-full items-center gap-2">
                     <span className="relative inline-flex size-8 shrink-0 items-center justify-center text-slate-700">
-                        <Bird
-                            className="size-5 transition-opacity duration-200 group-hover:opacity-0"
-                            strokeWidth={2.2}
+                        <img
+                            src={logoImg}
+                            alt="虎跃影画"
+                            className="size-7 transition-opacity duration-200 group-hover:opacity-0"
                         />
                         <span className="absolute inset-0 inline-flex items-center justify-center rounded-xl bg-white text-slate-700 opacity-0 shadow-sm transition-opacity duration-200 group-hover:opacity-100">
                             <PanelLeftOpen className="size-[18px]" strokeWidth={2} />
                         </span>
                     </span>
                     <span className="truncate text-sm font-semibold text-slate-800 transition-opacity duration-200 group-hover:opacity-0">
-                        小麻雀
+                        虎跃影画
                     </span>
                 </span>
             </button>
@@ -69,7 +71,7 @@ function SidebarBrand({
     }
 
     return (
-        <div className="absolute top-1/2 left-3 flex w-[5.75rem] -translate-y-1/2 items-center">
+        <div className="absolute top-1/2 left-3 flex w-[6.5rem] -translate-y-1/2 items-center">
             <span className="flex h-8 w-full items-center gap-2">
                 <BrandContent />
             </span>
@@ -86,7 +88,7 @@ export function AppSidebar({ collapsed, onToggleCollapsed }: AppSidebarProps) {
                 "transition-[width,background-color,border-color,border-radius,box-shadow,backdrop-filter] duration-[280ms]",
                 SIDEBAR_EASE,
                 collapsed
-                    ? "pointer-events-none w-[calc(5.75rem+12px)] rounded-xl border border-transparent bg-transparent shadow-none backdrop-blur-none"
+                    ? "pointer-events-none w-[calc(6.5rem+12px)] rounded-xl border border-transparent bg-transparent shadow-none backdrop-blur-none"
                     : "w-[260px] rounded-[20px] border border-white/65 bg-white/92 shadow-[0_18px_48px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-[56px] backdrop-saturate-[140%]",
             )}
         >

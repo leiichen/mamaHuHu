@@ -1,4 +1,4 @@
-// 短剧 Agent 页：复现小麻雀 /novel/list
+// 短剧 Agent 页：复现虎跃影画 /novel/list
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { NovelHero } from "@/components/novel/NovelHero";

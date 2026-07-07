@@ -39,7 +39,7 @@ export function HomeHero({ activeTab, nickname = "" }: HomeHeroProps) {
                     </span>
                 )}
                 {displayName ? "，" : " "}
-                和小麻雀{getActionText(activeTab)}
+                和虎跃影画{getActionText(activeTab)}
                 <span className="text-white">{getHighlightText(activeTab)}</span>
             </h1>
         </div>

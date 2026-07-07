@@ -1,4 +1,4 @@
-// 首页：复现小麻雀网页版创作主页
+// 首页：复现虎跃影画网页版创作主页
 import { useState } from "react";
 import { HomeAgentTabs, type HomeAgentTab } from "@/components/home/HomeAgentTabs";
 import { HomeHero } from "@/components/home/HomeHero";
@@ -6,7 +6,7 @@ import { HomePromptInput } from "@/components/home/HomePromptInput";
 import { NovelScriptPanel, type NovelScriptTab } from "@/components/novel/NovelScriptPanel";
 import { VideoScriptPanel } from "@/components/video/VideoScriptPanel";
 
-// 渲染小麻雀首页
+// 渲染虎跃影画首页
 export function HomePage() {
         const [activeTab, setActiveTab] = useState<HomeAgentTab>("creative");
         // scriptTab 短剧 Agent 剧本面板 Tab
