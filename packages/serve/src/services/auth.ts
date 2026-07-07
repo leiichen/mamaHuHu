@@ -5,7 +5,7 @@ import { signToken } from "../utils/jwt.js";
 // 生成随机昵称
 function generateNickname() {
     const suffix = Math.floor(100000 + Math.random() * 900000);
-    return `麻雀${suffix}`;
+    return `虎跃${suffix}`;
 }
 
 // 格式化返回给前端的用户信息

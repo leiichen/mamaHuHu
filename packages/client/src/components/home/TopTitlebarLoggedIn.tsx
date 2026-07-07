@@ -1,5 +1,6 @@
 // 登录后顶栏操作区：设置、用户菜单（悬浮展开，含退出登录）
-import { Bird, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { HuyaArtApiKeySettingsButton } from "@/components/home/HuyaArtApiKeySettingsButton";
@@ -79,7 +80,7 @@ export function TopTitlebarLoggedIn() {
                         aria-haspopup="menu"
                         className="inline-flex size-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-sm transition hover:bg-slate-50"
                     >
-                        <Bird className="size-4 text-slate-900" strokeWidth={2.2} />
+                        <img src={logoImg} alt="虎跃影画" className="size-4" />
                     </button>
 
                     {open ? (

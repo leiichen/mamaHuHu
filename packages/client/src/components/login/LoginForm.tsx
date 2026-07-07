@@ -1,7 +1,7 @@
 // 登录页表单：手机号登录
 import { useCallback, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Bird } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import { loginWithPhone } from "@/api/auth";
 import { ApiError } from "@/api/types";
@@ -61,14 +61,14 @@ export function LoginForm() {
             <div className="flex w-full max-w-[420px] flex-col items-center">
                 <Link
                     to="/"
-                    className="mb-8 inline-flex size-11 items-center justify-center rounded-full bg-black text-white transition-opacity hover:opacity-90"
+                    className="mb-8 inline-flex h-10 items-center justify-center transition-opacity hover:opacity-90"
                     aria-label="返回首页"
                 >
-                    <Bird className="size-5" strokeWidth={2.2} />
+                    <img src={logoImg} alt="虎跃影画" className="h-10 w-auto" />
                 </Link>
 
                 <h1 className="text-[28px] font-semibold tracking-tight text-slate-900">
-                    欢迎使用小麻雀
+                    欢迎使用虎跃影画
                 </h1>
 
                 <form className="mt-10 w-full space-y-3" onSubmit={handleSubmit}>

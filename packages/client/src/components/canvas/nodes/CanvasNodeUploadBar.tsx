@@ -137,7 +137,7 @@ function CanvasNodeUploadBarComponent({ assetId, kind }: CanvasNodeUploadBarProp
                         )}
                     >
                         <FolderOpen className="size-3.5 shrink-0" strokeWidth={1.8} />
-                        从小麻雀资产库选择
+                        从虎跃影画资产库选择
                     </button>
                 </div>
                 {errorMessage ? (

@@ -106,7 +106,7 @@ function CanvasAssetLibraryPickerDialogComponent({
                 onPointerDown={stopFlowEvent}
             >
                 <div className="mb-4">
-                    <h3 className="text-base font-semibold text-slate-900">从小麻雀资产库选择</h3>
+                    <h3 className="text-base font-semibold text-slate-900">从虎跃影画资产库选择</h3>
                     <p className="mt-1 text-sm text-slate-500">已按当前节点类型筛选可使用的图片资产</p>
                 </div>
 

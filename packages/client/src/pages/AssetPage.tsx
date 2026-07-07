@@ -1,4 +1,4 @@
-// 资产库页：复现小麻雀资产库
+// 资产库页：复现虎跃影画资产库
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { AssetLibraryGrid } from "@/components/asset/AssetLibraryGrid";
