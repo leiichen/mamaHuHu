@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { ASSET_LIST_FILTER_TYPES } from "../lib/assetCategory.js";
 import { BadRequestError, NotFoundError } from "../lib/errors.js";
+import { resolveAssetMediaUrl } from "../lib/storageUrl.js";
 import type { ProjectKind } from "./script.js";
 
 // DEFAULT_PROJECT_TITLE 新建项目时的固定默认标题
@@ -45,7 +46,7 @@ function formatProject(project: {
     };
 }
 
-// 格式化最近项目列表项（含剧集数量）
+// 格式化最近项目列表项（含剧集数量与封面）
 function formatRecentProject(project: {
     id: number;
     title: string;
@@ -57,10 +58,13 @@ function formatRecentProject(project: {
     _count: {
         series: number;
     };
+    // 封面取该项目首个有 url 的角色资产（listRecentByUser 嵌套 include 取 take:1）
+    assets?: Array<{ url: string | null }>;
 }) {
     return {
         ...formatProject(project),
         episodeCount: project._count.series,
+        cover: resolveAssetMediaUrl(project.assets?.[0]?.url ?? null),
     };
 }
 
@@ -105,6 +109,16 @@ export class ProjectService {
             include: {
                 _count: {
                     select: { series: true },
+                },
+                // 取每个项目首个有 url 的角色资产作封面（take:1 避免全量加载）
+                assets: {
+                    where: {
+                        type: "character",
+                        url: { not: null },
+                    },
+                    select: { url: true },
+                    orderBy: { created_at: "asc" },
+                    take: 1,
                 },
             },
         });

@@ -5,6 +5,7 @@ export type NovelProject = {
     updatedAt: string;
     episodeCount: number;
     isExample?: boolean;
+    cover?: string | null;
 };
 
 /*

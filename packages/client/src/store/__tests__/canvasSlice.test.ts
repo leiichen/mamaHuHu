@@ -186,7 +186,7 @@ describe("canvasSlice applyCanvasLibraryMedia", () => {
                 "request-id",
                 {
                     targetAssetId: 1,
-                    sourceAssetId: 2,
+                    sourceAsset: { id: 2, url: "new.jpg", cover: "new.jpg" },
                 },
             ),
         );

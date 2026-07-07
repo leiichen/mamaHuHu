@@ -21,5 +21,6 @@ export function mapRecentProjectToNovelProject(project: RecentProject): NovelPro
         title: project.title,
         updatedAt: formatProjectUpdatedAt(project.updatedAt),
         episodeCount: project.episodeCount,
+        cover: project.cover ?? null,
     };
 }
