@@ -224,6 +224,35 @@ export class AssetService {
     }
 
     /**
+     * 批量创建资产并写入名称与 params（用于大纲解析后自动注入角色/场景）
+     * @returns 新创建的资产列表（格式化后）
+     */
+    async createAssetWithProfile(
+        userId: number,
+        projectId: number,
+        canvasKind: string,
+        name: string,
+        params?: Record<string, unknown>,
+    ) {
+        await assertProjectOwner(userId, projectId);
+
+        const categoryFields = resolveCanvasCategoryFields(canvasKind);
+
+        const asset = await prisma.asset.create({
+            data: {
+                project_id: projectId,
+                type: categoryFields.type,
+                asset_type: categoryFields.asset_type,
+                name: name.trim() || getCanvasKindDefaultName(canvasKind),
+                params: (params ?? {}) as Prisma.InputJsonValue,
+            },
+            include: ASSET_SERIES_INCLUDE,
+        });
+
+        return formatAssetForApi(asset);
+    }
+
+    /**
      * 引用源节点创建资产：源节点无 derive_id 时双方写入新 derive_id，否则新节点继承源 derive_id
      * @returns 新资产与（可能已更新的）源资产
      */

@@ -1,6 +1,6 @@
 // 短视频剧情大纲页数据：拉取详情并在需要时触发大纲生成
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateVideoOutline } from "@/api/agent";
+import { generateVideoOutline, type CreatedAssetItem } from "@/api/agent";
 import { fetchScriptDetail, type ScriptDetail } from "@/api/script";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 
@@ -23,6 +23,8 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
     const [generating, setGenerating] = useState(false);
     // errorMessage 错误提示
     const [errorMessage, setErrorMessage] = useState("");
+    // createdAssets 大纲生成后自动创建的资产列表
+    const [createdAssets, setCreatedAssets] = useState<CreatedAssetItem[] | null>(null);
     // generateStartedRef 是否已触发过生成，避免重复请求
     const generateStartedRef = useRef(false);
     // onOutlineCompleteRef 完成回调引用
@@ -46,6 +48,11 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
 
         try {
             const result = await generateVideoOutline({ project_id: projectId });
+
+            if (result.createdAssets?.length) {
+                setCreatedAssets(result.createdAssets);
+            }
+
             const detail = await loadDetail();
 
             if (detail.summaryStatus === "completed") {
@@ -75,6 +82,7 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
         setScript(null);
         setLoading(true);
         setErrorMessage("");
+        setCreatedAssets(null);
 
         let cancelled = false;
 
@@ -140,6 +148,7 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
         loading,
         generating,
         errorMessage,
+        createdAssets,
         retryGenerate,
     };
 }
