@@ -8,7 +8,7 @@ import { getRequestOpenaiApiKeyOverride } from "../lib/requestOpenaiApiKeyContex
  */
 
 // DEFAULT_LLM_MODEL 默认对话模型
-export const DEFAULT_LLM_MODEL = "kimi-k2.6";
+export const DEFAULT_LLM_MODEL = "deepseek/deepseek-v4-pro";
 
 /**
  * 创建 LangChain ChatOpenAI 实例
