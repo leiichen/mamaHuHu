@@ -1,6 +1,6 @@
 // 画布媒体 Thunk：图片生成、音频/图片上传与资产库媒体应用
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { saveCanvasAssets, updateAssetMedia } from "@/api/asset";
+import { saveCanvasAssets, updateAssetMedia, type ProjectAsset } from "@/api/asset";
 import { generateImage, type ImageGenerationModelId } from "@/api/generation";
 import { fetchQiniuUploadToken, fetchRemoteImageToQiniu } from "@/api/upload";
 import { ApiError } from "@/api/types";
@@ -188,29 +188,27 @@ export const uploadCanvasImageMedia = createAsyncThunk(
     },
 );
 
-// 从资产库选择媒体并应用到当前节点
+// 从资产库选择媒体并应用到当前节点（sourceAsset 由弹窗直接传入，支持跨项目资产）
 export const applyCanvasLibraryMedia = createAsyncThunk(
     "canvas/applyLibraryMedia",
     async (
         payload: {
             targetAssetId: number;
-            sourceAssetId: number;
+            sourceAsset: Pick<ProjectAsset, "id" | "url" | "cover">;
         },
-        { rejectWithValue, getState },
+        { rejectWithValue },
     ) => {
         try {
-            const canvas = (getState() as { canvas: CanvasState }).canvas;
-            const assets = getCanvasAssetsList(canvas);
-            const sourceAsset = assets.find((item) => item.id === payload.sourceAssetId);
+            const { url, cover } = payload.sourceAsset;
 
-            if (!sourceAsset?.url) {
+            if (!url) {
                 throw new Error("所选资产没有可用图片");
             }
 
             const mediaAsset = await updateAssetMedia({
                 asset_id: payload.targetAssetId,
-                url: sourceAsset.url,
-                cover: sourceAsset.cover ?? sourceAsset.url,
+                url,
+                cover: cover ?? url,
             });
 
             return {

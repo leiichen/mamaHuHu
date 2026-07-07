@@ -16,6 +16,7 @@ export type Project = {
 // RecentProject 最近项目列表项
 export type RecentProject = Project & {
     episodeCount: number;
+    cover?: string | null;
 };
 
 // ProjectDetail 项目详情

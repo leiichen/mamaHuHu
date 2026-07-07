@@ -59,11 +59,21 @@ export function NovelProjectCard({
                 className="relative flex w-full aspect-[16/10] cursor-pointer items-center justify-center overflow-hidden bg-[#ececef]"
                 onClick={handleOpen}
             >
-                <Clapperboard
-                    className="size-10 text-slate-300 transition group-hover:text-slate-400"
-                    strokeWidth={1.5}
-                    aria-hidden
-                />
+                {project.cover ? (
+                    <img
+                        src={project.cover}
+                        alt={project.title}
+                        loading="lazy"
+                        className="absolute inset-0 size-full object-cover"
+                        draggable={false}
+                    />
+                ) : (
+                    <Clapperboard
+                        className="size-10 text-slate-300 transition group-hover:text-slate-400"
+                        strokeWidth={1.5}
+                        aria-hidden
+                    />
+                )}
 
                 {editable ? (
                     <label

@@ -1,19 +1,114 @@
-// 画布节点资产库选择弹窗：按节点类型筛选可应用的图片资产
+// 画布节点资产库选择弹窗：从跨项目资产库选择可应用的图片资产
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { Check, Image as ImageIcon, Loader2 } from "lucide-react";
+import { fetchLibraryAssets, type ProjectAsset } from "@/api/asset";
 import { resolveAssetLabel } from "@/lib/assetDisplay";
 import {
-    filterAssetsByLibraryTab,
     getCanvasNodeMediaConfig,
+    hasAssetImageMedia,
+    mapLibraryTabToAssetListType,
     resolveAssetLibraryPreviewKey,
     type CanvasLibraryTabKey,
     type CanvasNodeMediaKind,
 } from "@/lib/canvasNodeMedia";
+import { isAbortError } from "@/lib/isAbortError";
 import { resolveStoragePreviewUrl } from "@/lib/storageUrl";
-import { applyCanvasLibraryMedia, pushCanvasHistorySnapshot, selectCanvasAssetsList } from "@/store/canvasSlice";
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { applyCanvasLibraryMedia, pushCanvasHistorySnapshot } from "@/store/canvasSlice";
+import { useAppDispatch } from "@/store/hooks";
 import { cn } from "@/lib/utils";
+
+// LIBRARY_PAGE_SIZE 资产库分页每页条数
+const LIBRARY_PAGE_SIZE = 48;
+
+// 跨项目分页拉取资产库（按 Tab 对应的 /asset/library type 筛选）
+function useCrossProjectLibraryAssets(activeTab: CanvasLibraryTabKey, excludeAssetId?: number) {
+    const [assets, setAssets] = useState<ProjectAsset[]>([]);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const requestVersionRef = useRef(0);
+
+    const listType = mapLibraryTabToAssetListType(activeTab);
+
+    const fetchPage = useCallback(
+        async (pageToFetch: number, append: boolean) => {
+            // listType 为 null（canvas-image）时不拉取跨项目数据
+            if (!listType) {
+                setAssets([]);
+                setHasMore(false);
+                return;
+            }
+
+            const requestVersion = requestVersionRef.current + 1;
+            requestVersionRef.current = requestVersion;
+            const controller = new AbortController();
+
+            if (pageToFetch === 1) {
+                setLoading(true);
+            } else {
+                setLoadingMore(true);
+            }
+
+            try {
+                const result = await fetchLibraryAssets({
+                    type: listType,
+                    page: pageToFetch,
+                    page_size: LIBRARY_PAGE_SIZE,
+                    sort: "desc",
+                    signal: controller.signal,
+                });
+
+                if (requestVersion !== requestVersionRef.current) {
+                    return;
+                }
+
+                const filtered = result.items.filter(
+                    (asset) =>
+                        asset.id !== excludeAssetId && hasAssetImageMedia(asset),
+                );
+
+                setAssets((prev) => (append ? [...prev, ...filtered] : filtered));
+                setHasMore(result.hasMore);
+                setPage(result.page);
+            } catch (error) {
+                if (isAbortError(error)) {
+                    return;
+                }
+
+                if (requestVersion === requestVersionRef.current) {
+                    setAssets([]);
+                    setHasMore(false);
+                }
+            } finally {
+                if (requestVersion === requestVersionRef.current) {
+                    setLoading(false);
+                    setLoadingMore(false);
+                }
+            }
+        },
+        [excludeAssetId, listType],
+    );
+
+    // Tab 切换时重置并拉取首页
+    useEffect(() => {
+        setAssets([]);
+        setHasMore(true);
+        setPage(1);
+        void fetchPage(1, false);
+    }, [fetchPage]);
+
+    const loadMore = useCallback(() => {
+        if (loading || loadingMore || !hasMore) {
+            return;
+        }
+
+        void fetchPage(page + 1, true);
+    }, [fetchPage, hasMore, loading, loadingMore, page]);
+
+    return { assets, loading, loadingMore, hasMore, loadMore };
+}
 
 type CanvasAssetLibraryPickerDialogProps = {
     targetAssetId: number;
@@ -30,19 +125,21 @@ function CanvasAssetLibraryPickerDialogComponent({
     onClose,
 }: CanvasAssetLibraryPickerDialogProps) {
     const dispatch = useAppDispatch();
-    const assets = useAppSelector(selectCanvasAssetsList);
     const mediaConfig = getCanvasNodeMediaConfig(kind);
-    const defaultTab = mediaConfig.libraryTabs[0]?.key ?? "material";
+    // 仅保留支持跨项目的 Tab（canvas-image 为项目本地，本弹窗不展示）
+    const tabs = useMemo(
+        () => mediaConfig.libraryTabs.filter((tab) => mapLibraryTabToAssetListType(tab.key) !== null),
+        [mediaConfig.libraryTabs],
+    );
+    const defaultTab = tabs[0]?.key ?? "material";
     const wasOpenRef = useRef(false);
     const [activeTab, setActiveTab] = useState<CanvasLibraryTabKey>(defaultTab);
-    const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
+    const [selectedAsset, setSelectedAsset] = useState<ProjectAsset | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
-    const tabAssets = useMemo(
-        () => filterAssetsByLibraryTab(assets, activeTab, targetAssetId),
-        [activeTab, assets, targetAssetId],
-    );
+    const { assets: tabAssets, loading, loadingMore, hasMore, loadMore } =
+        useCrossProjectLibraryAssets(activeTab, targetAssetId);
 
     // 打开弹窗时重置 Tab 与选中项；Tab 切换时清空选中项
     useEffect(() => {
@@ -53,10 +150,10 @@ function CanvasAssetLibraryPickerDialogComponent({
 
         if (!wasOpenRef.current) {
             setActiveTab(defaultTab);
-            setSelectedAssetId(null);
+            setSelectedAsset(null);
             setErrorMessage("");
         } else {
-            setSelectedAssetId(null);
+            setSelectedAsset(null);
         }
 
         wasOpenRef.current = true;
@@ -67,9 +164,21 @@ function CanvasAssetLibraryPickerDialogComponent({
         event.stopPropagation();
     }, []);
 
+    // 滚动到底部加载下一页
+    const handleScroll = useCallback(
+        (event: MouseEvent<HTMLDivElement>) => {
+            const el = event.currentTarget;
+
+            if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+                loadMore();
+            }
+        },
+        [loadMore],
+    );
+
     // 确认应用所选资产图片
     const handleConfirm = useCallback(async () => {
-        if (!selectedAssetId || isSubmitting) {
+        if (!selectedAsset || isSubmitting) {
             return;
         }
 
@@ -81,7 +190,7 @@ function CanvasAssetLibraryPickerDialogComponent({
             await dispatch(
                 applyCanvasLibraryMedia({
                     targetAssetId,
-                    sourceAssetId: selectedAssetId,
+                    sourceAsset: selectedAsset,
                 }),
             ).unwrap();
             onClose();
@@ -90,7 +199,7 @@ function CanvasAssetLibraryPickerDialogComponent({
         } finally {
             setIsSubmitting(false);
         }
-    }, [dispatch, isSubmitting, onClose, selectedAssetId, targetAssetId]);
+    }, [dispatch, isSubmitting, onClose, selectedAsset, targetAssetId]);
 
     if (!open) {
         return null;
@@ -111,7 +220,7 @@ function CanvasAssetLibraryPickerDialogComponent({
                 </div>
 
                 <div className="mb-3 flex flex-wrap gap-2">
-                    {mediaConfig.libraryTabs.map((tab) => {
+                    {tabs.map((tab) => {
                         const selected = activeTab === tab.key;
 
                         return (
@@ -132,15 +241,18 @@ function CanvasAssetLibraryPickerDialogComponent({
                     })}
                 </div>
 
-                <div className="nowheel min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/80 p-2">
+                <div
+                    className="nowheel min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-100 bg-slate-50/80 p-2"
+                    onScroll={handleScroll}
+                >
                     {tabAssets.length === 0 ? (
                         <p className="px-2 py-8 text-center text-sm text-slate-400">
-                            当前分类下暂无可用图片
+                            {loading ? "加载中..." : "当前分类下暂无可用图片"}
                         </p>
                     ) : (
                         <div className="grid grid-cols-3 gap-2">
                             {tabAssets.map((asset) => {
-                                const selected = selectedAssetId === asset.id;
+                                const selected = selectedAsset?.id === asset.id;
                                 const previewUrl = resolveStoragePreviewUrl(resolveAssetLibraryPreviewKey(asset));
 
                                 return (
@@ -148,7 +260,7 @@ function CanvasAssetLibraryPickerDialogComponent({
                                         key={asset.id}
                                         type="button"
                                         disabled={isSubmitting}
-                                        onClick={() => setSelectedAssetId(asset.id)}
+                                        onClick={() => setSelectedAsset(asset)}
                                         className={cn(
                                             "relative overflow-hidden rounded-xl border bg-white text-left transition",
                                             selected
@@ -186,6 +298,12 @@ function CanvasAssetLibraryPickerDialogComponent({
                             })}
                         </div>
                     )}
+
+                    {loadingMore ? (
+                        <div className="flex items-center justify-center py-3 text-slate-400">
+                            <Loader2 className="size-4 animate-spin" strokeWidth={2} />
+                        </div>
+                    ) : null}
                 </div>
 
                 {errorMessage ? (
@@ -203,7 +321,7 @@ function CanvasAssetLibraryPickerDialogComponent({
                     </button>
                     <button
                         type="button"
-                        disabled={isSubmitting || !selectedAssetId}
+                        disabled={isSubmitting || !selectedAsset}
                         onClick={() => {
                             void handleConfirm();
                         }}

@@ -2,13 +2,31 @@
 import type { ProjectAsset } from "@/api/asset";
 import type { CanvasNodeKind } from "@/components/canvas/canvasTypes";
 import type { StorageCategory } from "@/api/upload";
-import { resolveCanvasNodeKind } from "@/lib/assetCategory";
+import { resolveCanvasNodeKind, type AssetListFilterType } from "@/lib/assetCategory";
 
 // CanvasNodeMediaKind 支持图片上传/资产库选择的节点类型
 export type CanvasNodeMediaKind = Extract<CanvasNodeKind, "character" | "scene" | "image">;
 
 // CanvasLibraryTabKey 资产库选择弹窗 Tab
 export type CanvasLibraryTabKey = "character" | "scene" | "material" | "canvas-image";
+
+// CROSS_PROJECT_LIBRARY_TAB_KEYS 资产库选择弹窗支持跨项目的 Tab（canvas-image 为项目本地，不支持）
+export const CROSS_PROJECT_LIBRARY_TAB_KEYS: CanvasLibraryTabKey[] = [
+    "character",
+    "scene",
+    "material",
+];
+
+// 将弹窗 Tab 映射为 /asset/library 的 type 参数；canvas-image 不支持跨项目，返回 null
+export function mapLibraryTabToAssetListType(
+    tabKey: CanvasLibraryTabKey,
+): AssetListFilterType | null {
+    if (tabKey === "character" || tabKey === "scene" || tabKey === "material") {
+        return tabKey;
+    }
+
+    return null;
+}
 
 // CanvasLibraryTabConfig 资产库 Tab 配置
 export type CanvasLibraryTabConfig = {
