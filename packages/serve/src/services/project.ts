@@ -1,12 +1,27 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import { ASSET_LIST_FILTER_TYPES } from "../lib/assetCategory.js";
 import { BadRequestError, NotFoundError } from "../lib/errors.js";
+import type { ProjectKind } from "./script.js";
 
 // DEFAULT_PROJECT_TITLE 新建项目时的固定默认标题
 const DEFAULT_PROJECT_TITLE = "未命名项目";
 
 // DEFAULT_RECENT_LIMIT 最近项目列表默认条数
 const DEFAULT_RECENT_LIMIT = 12;
+
+// 从 project.params 解析项目类型，缺省为 novel（向后兼容历史数据）
+function parseProjectKind(params: unknown): ProjectKind {
+    if (params && typeof params === "object" && !Array.isArray(params)) {
+        const kind = (params as { kind?: unknown }).kind;
+
+        if (kind === "novel" || kind === "video") {
+            return kind;
+        }
+    }
+
+    return "novel";
+}
 
 // 格式化返回给前端的项目信息
 function formatProject(project: {
@@ -24,6 +39,7 @@ function formatProject(project: {
         description: project.description,
         content: project.content,
         params: project.params,
+        kind: parseProjectKind(project.params),
         createdAt: project.created_at,
         updatedAt: project.updated_at,
     };
@@ -61,10 +77,29 @@ export class ProjectService {
         return formatProject(project);
     }
 
-    // 查询当前用户最近更新的项目列表
-    async listRecentByUser(userId: number, limit = DEFAULT_RECENT_LIMIT) {
+    // 查询当前用户最近更新的项目列表（可按项目类型 kind 过滤）
+    // kind="video" 仅返回短视频项目；kind="novel" 返回短剧项目（含 params 为 null 的历史数据，向后兼容）；
+    // 不传 kind 返回全部。
+    async listRecentByUser(userId: number, limit = DEFAULT_RECENT_LIMIT, kind?: ProjectKind) {
+        // kindFilter 项目类型过滤条件；novel 额外包含 params 为 null 的历史项目
+        const kindFilter =
+            kind === undefined
+                ? undefined
+                : kind === "novel"
+                  ? {
+                        // 短剧 = kind=novel，或 params 为 SQL NULL 的历史项目（kind 字段引入前创建）
+                        OR: [
+                            { params: { path: "$.kind", equals: "novel" } },
+                            { params: { equals: Prisma.DbNull } },
+                        ],
+                    }
+                  : { params: { path: "$.kind", equals: "video" } };
+
         const projects = await prisma.project.findMany({
-            where: { user_id: userId },
+            where: {
+                user_id: userId,
+                ...(kindFilter ? kindFilter : {}),
+            },
             orderBy: { updated_at: "desc" },
             take: limit,
             include: {

@@ -3,10 +3,18 @@ import { useCallback, useMemo, useState } from "react";
 import { batchDeleteProjects, fetchRecentProjects, updateProjectTitle } from "@/api/project";
 import { useAsyncRequest } from "@/hooks/useAsyncRequest";
 import { mapRecentProjectToNovelProject } from "@/lib/novelProjectMapper";
+import type { ProjectKind } from "@/lib/projectPaths";
 
-// 获取最近项目列表并映射为卡片展示数据
-export function useRecentProjects(limit = 12) {
-    const { data, loading, errorMessage, run } = useAsyncRequest(fetchRecentProjects, {
+// 获取最近项目列表并映射为卡片展示数据（可按项目类型 kind 过滤）
+export function useRecentProjects(limit = 12, kind?: ProjectKind) {
+    // 将 kind 绑定进请求函数，保持 useAsyncRequest 以 limit 为单一参数
+    const requestFn = useCallback(
+        (currentLimit: number, options?: Parameters<typeof fetchRecentProjects>[2]) =>
+            fetchRecentProjects(currentLimit, kind, options),
+        [kind],
+    );
+
+    const { data, loading, errorMessage, run } = useAsyncRequest(requestFn, {
         immediate: true,
         params: limit,
         defaultErrorMessage: "获取项目列表失败，请稍后重试",

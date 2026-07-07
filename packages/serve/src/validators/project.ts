@@ -3,6 +3,7 @@ import { z } from "zod";
 // listRecentProjectsSchema 最近项目列表 query 校验
 export const listRecentProjectsSchema = z.object({
     limit: z.coerce.number().int().min(1).max(50).optional().default(12),
+    kind: z.enum(["novel", "video"]).optional(),
 });
 
 // getProjectDetailSchema 项目详情 query 校验

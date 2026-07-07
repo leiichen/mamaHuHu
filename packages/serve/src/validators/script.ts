@@ -25,6 +25,7 @@ export const createScriptDraftSchema = z.object({
         .max(999, "集数不能超过 999")
         .optional(),
     imageStyleId: z.enum(IMAGE_STYLE_IDS).optional(),
+    kind: z.enum(["novel", "video"]).optional(),
 });
 
 // getScriptDetailSchema 剧本详情 query 校验

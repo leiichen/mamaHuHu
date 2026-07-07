@@ -1,18 +1,16 @@
-// 短剧 Agent 页：复现小麻雀 /novel/list
-import { useCallback, useState } from "react";
+// 短视频 Agent 页：创意输入与项目列表
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { NovelHero } from "@/components/novel/NovelHero";
+import { VideoHero } from "@/components/video/VideoHero";
+import { VideoScriptPanel } from "@/components/video/VideoScriptPanel";
 import { NovelProjectSection } from "@/components/novel/NovelProjectSection";
-import { NovelScriptPanel, type NovelScriptTab } from "@/components/novel/NovelScriptPanel";
 import type { NovelProject } from "@/data/novelProjects";
 import { getProjectPagePath } from "@/lib/projectPaths";
 import { useRecentProjects } from "@/hooks/useRecentProjects";
 
-// 渲染短剧 Agent 列表页
-export function NovelPage() {
+// 渲染短视频 Agent 列表页
+export function VideoPage() {
     const navigate = useNavigate();
-    // scriptTab 当前剧本面板 Tab
-    const [scriptTab, setScriptTab] = useState<NovelScriptTab>("ai");
     const {
         projects: myProjects,
         loading,
@@ -21,7 +19,7 @@ export function NovelPage() {
         deleteProjects,
         deletingProjectIds,
         renamingProjectIds,
-    } = useRecentProjects(12, "novel");
+    } = useRecentProjects(12, "video");
 
     // 点击项目卡片进入项目工作流页
     const handleProjectClick = useCallback(
@@ -30,7 +28,7 @@ export function NovelPage() {
                 return;
             }
 
-            navigate(getProjectPagePath(Number(project.id)));
+            navigate(getProjectPagePath(Number(project.id), "video"));
         },
         [navigate],
     );
@@ -42,11 +40,11 @@ export function NovelPage() {
                 className="pointer-events-none absolute inset-0 "
             />
             <div className="relative z-[2] mx-auto flex w-full max-w-[1200px] flex-col gap-12 px-4 pb-16 pt-6 md:px-6 md:pb-20 md:pt-8">
-                <NovelHero />
-                <NovelScriptPanel activeTab={scriptTab} onTabChange={setScriptTab} />
+                <VideoHero />
+                <VideoScriptPanel />
                 <div className="mx-auto flex w-full max-w-[920px] flex-col gap-10 pb-24">
                     <NovelProjectSection
-                        title="我的项目"
+                        title="我的短视频"
                         projects={myProjects}
                         loading={loading}
                         errorMessage={errorMessage}

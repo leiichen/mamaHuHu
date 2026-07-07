@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../config/prisma.js";
 import type { ScriptSummary } from "../agents/implementations/scriptSummary/types.js";
 import type { SerieEpisodeItem } from "../agents/implementations/episodeScript/types.js";
+import type { VideoOutline } from "./videoOutline.js";
 import { NotFoundError } from "../lib/errors.js";
 import { SUMMARY_STATUS, type SummaryStatus } from "../validators/script.js";
 
@@ -18,8 +19,12 @@ const DEFAULT_SCRIPT_NAME = "未命名剧本";
 // PROJECT_TITLE_MAX_LENGTH 项目标题最大长度
 const PROJECT_TITLE_MAX_LENGTH = 40;
 
+// ProjectKind 项目类型：novel 短剧 | video 短视频
+export type ProjectKind = "novel" | "video";
+
 // ScriptParams 剧本 params 字段结构
 export type ScriptParams = {
+    kind?: ProjectKind;
     episodeCount?: number;
     imageStyleId?: string;
     text?: string;
@@ -35,6 +40,7 @@ export type CreateScriptDraftInput = {
     creative: string;
     episodeCount?: number;
     imageStyleId?: string;
+    kind?: ProjectKind;
 };
 
 // ScriptDraftRecord 剧本草稿创建结果
@@ -50,13 +56,14 @@ export type ScriptDetailRecord = {
     projectId: number;
     name: string;
     source: string | null;
-    summary: ScriptSummary | null;
+    summary: ScriptSummary | VideoOutline | null;
     serieContent: SerieEpisodeItem[] | null;
     params: ScriptParams;
     summaryStatus: SummaryStatus;
     summaryText: string | null;
     serieContentStatus: SummaryStatus;
     episodeCount: number | null;
+    kind: ProjectKind;
     createdAt: Date;
     updatedAt: Date;
 };
@@ -66,6 +73,14 @@ export type ApplyScriptSummaryInput = {
     userId: number;
     projectId: number;
     summary: ScriptSummary;
+    summaryText: string;
+};
+
+// ApplyVideoOutlineInput 写入短视频剧情大纲入参
+export type ApplyVideoOutlineInput = {
+    userId: number;
+    projectId: number;
+    outline: VideoOutline;
     summaryText: string;
 };
 
@@ -102,13 +117,13 @@ function parseScriptParams(raw: unknown): ScriptParams {
     return raw as ScriptParams;
 }
 
-// 解析剧本 summary JSON
-function parseScriptSummary(raw: unknown): ScriptSummary | null {
+// 解析剧本 summary JSON（短剧 ScriptSummary 或短视频 VideoOutline）
+function parseScriptSummary(raw: unknown): ScriptSummary | VideoOutline | null {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
         return null;
     }
 
-    return raw as ScriptSummary;
+    return raw as ScriptSummary | VideoOutline;
 }
 
 // 解析分集剧本 serie_content JSON
@@ -178,7 +193,8 @@ function formatScriptDetail(script: {
         summaryStatus,
         summaryText: params.text ?? null,
         serieContentStatus: resolveSerieContentStatus(params, serieContent),
-        episodeCount: params.episodeCount ?? summary?.episodeCount ?? null,
+        episodeCount: params.episodeCount ?? (summary as ScriptSummary | null)?.episodeCount ?? null,
+        kind: params.kind ?? "novel",
         createdAt: script.created_at,
         updatedAt: script.updated_at,
     };
@@ -206,9 +222,14 @@ export class ScriptService {
 
     // 新建项目与剧本草稿，原始创意写入 source
     async createDraft(input: CreateScriptDraftInput): Promise<ScriptDraftRecord> {
+        const kind: ProjectKind = input.kind ?? "novel";
+        // 短视频默认只有一集，忽略前端传入的集数
+        const episodeCount = kind === "video" ? 1 : input.episodeCount;
+
         const scriptParams: Prisma.InputJsonObject = {
+            kind,
             summaryStatus: SUMMARY_STATUS.PENDING,
-            ...(input.episodeCount !== undefined ? { episodeCount: input.episodeCount } : {}),
+            ...(episodeCount !== undefined ? { episodeCount } : {}),
             ...(input.imageStyleId ? { imageStyleId: input.imageStyleId } : {}),
         };
 
@@ -217,6 +238,8 @@ export class ScriptService {
                 data: {
                     title: DEFAULT_PROJECT_TITLE,
                     user_id: input.userId,
+                    // 项目类型写入 project.params，供列表过滤与详情返回使用
+                    params: { kind } as Prisma.InputJsonObject,
                 },
             });
 
@@ -334,6 +357,48 @@ export class ScriptService {
                 data: {
                     name: displayName || DEFAULT_SCRIPT_NAME,
                     summary: input.summary as Prisma.InputJsonValue,
+                    params: updatedParams,
+                },
+            });
+        });
+
+        return formatScriptDetail(updated);
+    }
+
+    // 写入短视频剧情大纲并同步更新项目标题
+    async applyVideoOutline(input: ApplyVideoOutlineInput): Promise<ScriptDetailRecord> {
+        const script = await prisma.script.findFirst({
+            where: {
+                project_id: input.projectId,
+                project: { user_id: input.userId },
+            },
+        });
+
+        if (!script) {
+            throw new NotFoundError("剧本不存在");
+        }
+
+        const params = parseScriptParams(script.params);
+        const displayName = truncateText(input.outline.text.split("\n")[0] ?? "", PROJECT_TITLE_MAX_LENGTH);
+
+        const updatedParams: Prisma.InputJsonObject = {
+            ...params,
+            text: input.summaryText,
+            summaryStatus: SUMMARY_STATUS.COMPLETED,
+            summaryError: undefined,
+        };
+
+        const updated = await prisma.$transaction(async (tx) => {
+            await tx.project.update({
+                where: { id: input.projectId },
+                data: { title: displayName || DEFAULT_PROJECT_TITLE },
+            });
+
+            return tx.script.update({
+                where: { id: script.id },
+                data: {
+                    name: displayName || DEFAULT_SCRIPT_NAME,
+                    summary: input.outline as Prisma.InputJsonValue,
                     params: updatedParams,
                 },
             });

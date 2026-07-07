@@ -4,6 +4,7 @@ import { HomeAgentTabs, type HomeAgentTab } from "@/components/home/HomeAgentTab
 import { HomeHero } from "@/components/home/HomeHero";
 import { HomePromptInput } from "@/components/home/HomePromptInput";
 import { NovelScriptPanel, type NovelScriptTab } from "@/components/novel/NovelScriptPanel";
+import { VideoScriptPanel } from "@/components/video/VideoScriptPanel";
 
 // 渲染小麻雀首页
 export function HomePage() {
@@ -25,6 +26,10 @@ export function HomePage() {
 
                                 {activeTab === "creative" ? (
                                         <HomePromptInput />
+                                ) : activeTab === "video" ? (
+                                        <section className="relative z-[5] flex w-full justify-center">
+                                                <VideoScriptPanel />
+                                        </section>
                                 ) : (
                                         <section className="relative z-[5] flex w-full justify-center">
                                                 <NovelScriptPanel activeTab={scriptTab} onTabChange={setScriptTab} />

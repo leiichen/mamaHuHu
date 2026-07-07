@@ -1,15 +1,16 @@
-// 短剧项目工作流页：剧情大纲 / 资产库 / 分集视频
+// 短剧 / 短视频项目工作流页：剧情大纲 / 资产库 / 视频
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ProjectAssetStep } from "@/components/project/ProjectAssetStep";
 import { ProjectOutlineStep } from "@/components/project/ProjectOutlineStep";
+import { ProjectVideoOutlineStep } from "@/components/project/ProjectVideoOutlineStep";
 import { ProjectEditableTitle } from "@/components/project/ProjectEditableTitle";
 import { ProjectEpisodeStep } from "@/components/project/ProjectEpisodeStep";
 import { ProjectStepBar } from "@/components/project/ProjectStepBar";
 import { TopCenterToast } from "@/components/ui/top-center-toast";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
-import { getNovelPagePath } from "@/lib/projectPaths";
+import { getAgentListPath } from "@/lib/projectPaths";
 import type { ProjectStepKey } from "@/lib/projectSteps";
 
 // 渲染项目工作流页
@@ -72,7 +73,7 @@ export function ProjectPage() {
                             type="button"
                             aria-label="返回"
                             className="inline-flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-600 transition hover:bg-black/5"
-                            onClick={() => navigate(getNovelPagePath())}
+                            onClick={() => navigate(getAgentListPath(project.kind))}
                         >
                             <ChevronLeft className="size-5" strokeWidth={1.8} />
                         </button>
@@ -97,10 +98,17 @@ export function ProjectPage() {
 
             <main>
                 {activeStep === "outline" ? (
-                    <ProjectOutlineStep
-                        projectId={numericProjectId}
-                        onProjectTitleChange={updateProjectTitle}
-                    />
+                    project.kind === "video" ? (
+                        <ProjectVideoOutlineStep
+                            projectId={numericProjectId}
+                            onProjectTitleChange={updateProjectTitle}
+                        />
+                    ) : (
+                        <ProjectOutlineStep
+                            projectId={numericProjectId}
+                            onProjectTitleChange={updateProjectTitle}
+                        />
+                    )
                 ) : null}
 
                 {activeStep === "assets" ? (
@@ -111,7 +119,10 @@ export function ProjectPage() {
                 ) : null}
 
                 {activeStep === "episodes" ? (
-                    <ProjectEpisodeStep projectId={numericProjectId} />
+                    <ProjectEpisodeStep
+                        projectId={numericProjectId}
+                        kind={project.kind}
+                    />
                 ) : null}
             </main>
 

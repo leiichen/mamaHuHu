@@ -1,4 +1,5 @@
 import type { ProjectSerie, SerieParams } from "@/api/serie";
+import type { ProjectKind } from "@/lib/projectSteps";
 
 // CHINESE_NUMERALS 中文数字表（支持 1-99）
 const CHINESE_NUMERALS = [
@@ -15,28 +16,35 @@ const CHINESE_NUMERALS = [
     "十",
 ] as const;
 
-// 将 1-99 转为中文序数集名（如 第一集、第十二集）
-export function formatChineseEpisodeSubtitle(index: number): string {
+// 根据 kind 返回序数单位：短剧「集」、短视频「条」
+function resolveEpisodeUnit(kind: ProjectKind = "novel"): string {
+    return kind === "video" ? "条" : "集";
+}
+
+// 将 1-99 转为中文序数名（如 第一集、第十二集 / 第一条、第十二条）
+export function formatChineseEpisodeSubtitle(index: number, kind: ProjectKind = "novel"): string {
+    const unit = resolveEpisodeUnit(kind);
+
     if (!Number.isFinite(index) || index <= 0) {
-        return "第一集";
+        return `第一${unit}`;
     }
 
     if (index <= 10) {
-        return `第${CHINESE_NUMERALS[index]}集`;
+        return `第${CHINESE_NUMERALS[index]}${unit}`;
     }
 
     if (index < 20) {
-        return `第十${CHINESE_NUMERALS[index - 10]}集`;
+        return `第十${CHINESE_NUMERALS[index - 10]}${unit}`;
     }
 
     const tens = Math.floor(index / 10);
     const ones = index % 10;
 
     if (ones === 0) {
-        return `第${CHINESE_NUMERALS[tens]}十集`;
+        return `第${CHINESE_NUMERALS[tens]}十${unit}`;
     }
 
-    return `第${CHINESE_NUMERALS[tens]}十${CHINESE_NUMERALS[ones]}集`;
+    return `第${CHINESE_NUMERALS[tens]}十${CHINESE_NUMERALS[ones]}${unit}`;
 }
 
 // 解析分集 params 为结构化对象
@@ -48,15 +56,19 @@ export function parseSerieParams(params: unknown): SerieParams {
     return params as SerieParams;
 }
 
-// 根据已有分集列表构建下一集创建参数
-export function buildNextSerieCreateInput(series: Array<{ name: string }>) {
+// 根据已有分集列表构建下一集创建参数（短视频按「条」命名）
+export function buildNextSerieCreateInput(
+    series: Array<{ name: string }>,
+    kind: ProjectKind = "novel",
+) {
     // nextIndex 下一集序号（从 1 开始）
     const nextIndex = series.length + 1;
+    const unit = resolveEpisodeUnit(kind);
 
     return {
-        name: `第 ${nextIndex} 集`,
+        name: `第 ${nextIndex} ${unit}`,
         params: {
-            subtitle: formatChineseEpisodeSubtitle(nextIndex),
+            subtitle: formatChineseEpisodeSubtitle(nextIndex, kind),
             stats: {
                 characterCount: 0,
                 sceneCount: 0,
@@ -85,12 +97,25 @@ export function buildSerieRenameUpdate(serie: ProjectSerie, nextSubtitle: string
     };
 }
 
-// 格式化分集卡片标题（第1集：第一集）
-export function formatSerieEpisodeCardTitle(serie: ProjectSerie, episodeIndex: number): string {
+// 格式化分集 / 短视频卡片标题
+// 短剧：第1集：第一集；短视频：第1条（不带 subtitle 后缀）
+export function formatSerieEpisodeCardTitle(
+    serie: ProjectSerie,
+    episodeIndex: number,
+    kind: ProjectKind = "novel",
+): string {
+    const unit = resolveEpisodeUnit(kind);
+    const prefix = `第${episodeIndex}${unit}`;
+
+    // 短视频只展示序数前缀，不再拼接冗余 subtitle
+    if (kind === "video") {
+        return prefix;
+    }
+
     const params = parseSerieParams(serie.params);
     const subtitle = params.subtitle?.trim() || serie.name.trim();
 
-    return `第${episodeIndex}集：${subtitle}`;
+    return `${prefix}：${subtitle}`;
 }
 
 // 格式化分集统计文案

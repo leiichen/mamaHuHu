@@ -8,6 +8,7 @@ import type {
     EpisodeScriptResult,
     SerieEpisodeItem,
 } from "../agents/implementations/episodeScript/types.js";
+import type { ScriptSummary } from "../agents/implementations/scriptSummary/types.js";
 import { SUMMARY_STATUS } from "../validators/script.js";
 import { scriptService } from "./script.js";
 
@@ -31,7 +32,9 @@ export class EpisodeScriptService {
             throw new Error("原始创意为空，无法生成分集剧本");
         }
 
-        const episodeCount = script.episodeCount ?? script.summary.episodeCount;
+        // 分集剧本仅用于短剧（novel）项目，summary 此处为 ScriptSummary
+        const summary = script.summary as ScriptSummary;
+        const episodeCount = script.episodeCount ?? summary.episodeCount;
 
         if (!episodeCount || episodeCount < 1) {
             throw new Error("集数无效，无法生成分集剧本");
@@ -56,7 +59,7 @@ export class EpisodeScriptService {
         try {
             const outline = await runEpisodeOutlineAgent({
                 creative: script.source,
-                summary: script.summary,
+                summary,
                 episodeCount,
             });
 
@@ -73,7 +76,7 @@ export class EpisodeScriptService {
                 try {
                     const batchResult = await runEpisodeBatchContentAgent({
                         creative: script.source,
-                        summary: script.summary,
+                        summary,
                         episodeCount,
                         batchStart: batch.start,
                         batchEnd: batch.end,

@@ -1,14 +1,16 @@
 import { request } from "@/api/http";
 import type { RequestOptions } from "@/api/types";
 import type { ImageStyleId } from "@/lib/imageStyles";
-import type { ScriptSummary } from "@/api/agent";
+import type { ScriptSummary, VideoOutline } from "@/api/agent";
 import type { SerieEpisodeItem } from "@/api/episodeScript";
+import type { ProjectKind } from "@/lib/projectPaths";
 
 // SummaryStatus 剧本摘要生成状态
 export type SummaryStatus = "pending" | "generating" | "completed" | "failed";
 
 // ScriptParams 剧本 params 字段
 export type ScriptParams = {
+    kind?: ProjectKind;
     episodeCount?: number;
     imageStyleId?: ImageStyleId;
     text?: string;
@@ -24,13 +26,14 @@ export type ScriptDetail = {
     projectId: number;
     name: string;
     source: string | null;
-    summary: ScriptSummary | null;
+    summary: ScriptSummary | VideoOutline | null;
     serieContent: SerieEpisodeItem[] | null;
     params: ScriptParams;
     summaryStatus: SummaryStatus;
     summaryText: string | null;
     serieContentStatus: SummaryStatus;
     episodeCount: number | null;
+    kind: ProjectKind;
     createdAt: string;
     updatedAt: string;
 };
@@ -47,6 +50,7 @@ export type CreateScriptDraftPayload = {
     creative: string;
     episodeCount?: number;
     imageStyleId?: ImageStyleId;
+    kind?: ProjectKind;
 };
 
 // 立即创建项目与剧本草稿

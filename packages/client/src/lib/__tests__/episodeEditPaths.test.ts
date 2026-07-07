@@ -11,4 +11,10 @@ describe("getEpisodeEditPath", () => {
             "/novel/project/12/episode/3/edit?fragment_id=5",
         );
     });
+
+    it("短视频项目使用 /video 前缀", () => {
+        expect(getEpisodeEditPath(12, 3, undefined, "video")).toBe(
+            "/video/project/12/episode/3/edit",
+        );
+    });
 });

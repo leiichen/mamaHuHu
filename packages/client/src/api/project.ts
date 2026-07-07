@@ -1,6 +1,7 @@
 import { request } from "@/api/http";
 import type { RequestOptions } from "@/api/types";
 import type { ProjectAssetTabCounts } from "@/lib/projectAssetTabs";
+import type { ProjectKind } from "@/lib/projectPaths";
 
 // Project 短剧项目
 export type Project = {
@@ -9,6 +10,7 @@ export type Project = {
     description: string | null;
     content: unknown;
     params: unknown;
+    kind: ProjectKind;
     createdAt: string;
     updatedAt: string;
 };
@@ -40,11 +42,11 @@ export function fetchProjectDetail(projectId: number, options?: RequestOptions) 
     });
 }
 
-// 获取当前用户最近更新的项目列表
-export function fetchRecentProjects(limit = 12, options?: RequestOptions) {
+// 获取当前用户最近更新的项目列表（可按项目类型 kind 过滤）
+export function fetchRecentProjects(limit = 12, kind?: ProjectKind, options?: RequestOptions) {
     return request<RecentProject[]>("/project/list", {
         method: "GET",
-        params: { limit },
+        params: { limit, ...(kind ? { kind } : {}) },
         signal: options?.signal,
     });
 }

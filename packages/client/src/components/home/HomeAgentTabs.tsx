@@ -2,7 +2,7 @@
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type HomeAgentTab = "creative" | "novel";
+export type HomeAgentTab = "creative" | "novel" | "video";
 
 type HomeAgentTabsProps = {
     activeTab: HomeAgentTab;
@@ -17,6 +17,7 @@ type HomeAgentTabsProps = {
 const AGENT_TABS: { label: string; value: HomeAgentTab }[] = [
     { label: "创作 Agent", value: "creative" },
     { label: "短剧 Agent", value: "novel" },
+    { label: "短视频 Agent", value: "video" },
 ];
 
 // 渲染创作 / 短剧 Agent 切换标签
@@ -33,7 +34,7 @@ export function HomeAgentTabs({ activeTab, onChange }: HomeAgentTabsProps) {
                 aria-hidden
                 className="absolute top-0.5 h-9 rounded-[58px] bg-slate-900 transition-all duration-300 ease-out"
                 style={{
-                    width: "calc(50% - 2px)",
+                    width: `calc(${100 / AGENT_TABS.length}% - 2px)`,
                     transform: `translateX(calc(${activeIndex * 100}% + ${activeIndex * 2}px))`,
                 }}
             />

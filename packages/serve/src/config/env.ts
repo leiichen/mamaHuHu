@@ -47,6 +47,9 @@ const envSchema = z.object({
     HUYA_ART_PROVIDER: z.string().default("volcengine"),
     SEEDREAM_MODEL: z.string().default("doubao-seedream-4-5-251128"),
     SEEDANCE_MODEL: z.string().default("seedance-2.0-cn"),
+    // 海智 LLM 平台 Dify 风格 workflow 接口（短视频剧本大纲生成）
+    HUYA_LLM_API_KEY: z.string().optional(),
+    HUYA_LLM_BASE_URL: z.string().url().default("https://llm.huya.info/v1"),
     QINIU_ACCESS_KEY: z.string().optional(),
     QINIU_SECRET_KEY: z.string().optional(),
     QINIU_BUCKET: z.string().optional(),
