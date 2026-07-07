@@ -64,7 +64,7 @@ export function NovelProjectCard({
                         src={project.cover}
                         alt={project.title}
                         loading="lazy"
-                        className="absolute inset-0 size-full object-cover"
+                        className="absolute inset-0 size-full object-contain"
                         draggable={false}
                     />
                 ) : (
