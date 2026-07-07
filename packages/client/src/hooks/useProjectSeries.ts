@@ -9,10 +9,11 @@ import {
 } from "@/api/serie";
 import { isAbortError } from "@/lib/isAbortError";
 import { buildNextSerieCreateInput } from "@/lib/serieEpisode";
+import type { ProjectKind } from "@/lib/projectSteps";
 import { removeSeriesByIds, upsertSerieInList } from "@/lib/serieList";
 
-// 加载项目分集列表并在本地追加新建分集
-export function useProjectSeries(projectId: number) {
+// 加载项目分集 / 短视频列表并在本地追加新建条目
+export function useProjectSeries(projectId: number, kind: ProjectKind = "novel") {
     const enabled = Number.isFinite(projectId) && projectId > 0;
     // series 当前分集列表
     const [series, setSeries] = useState<ProjectSerie[]>([]);
@@ -77,7 +78,7 @@ export function useProjectSeries(projectId: number) {
             return null;
         }
 
-        const input = buildNextSerieCreateInput(series);
+        const input = buildNextSerieCreateInput(series, kind);
         setCreating(true);
         setErrorMessage("");
 
@@ -95,7 +96,7 @@ export function useProjectSeries(projectId: number) {
         } finally {
             setCreating(false);
         }
-    }, [creating, enabled, projectId, series]);
+    }, [creating, enabled, kind, projectId, series]);
 
     // 删除一个或多个分集
     const deleteSeries = useCallback(

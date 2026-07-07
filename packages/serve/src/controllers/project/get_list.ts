@@ -9,8 +9,8 @@ export const middleware = [validateMiddleware(listRecentProjectsSchema, "query")
 
 // 获取当前用户最近更新的项目列表
 export const handler = asyncHandler<AuthRequest>(async (req, res) => {
-    const { limit } = req.query as unknown as ListRecentProjectsInput;
-    const projects = await projectService.listRecentByUser(req.user!.userId, limit);
+    const { limit, kind } = req.query as unknown as ListRecentProjectsInput;
+    const projects = await projectService.listRecentByUser(req.user!.userId, limit, kind);
 
     return success(res, projects, "获取最近项目列表成功");
 });

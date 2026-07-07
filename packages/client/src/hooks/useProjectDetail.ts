@@ -44,8 +44,8 @@ export function useProjectDetail(projectId: number) {
     }, [data]);
 
     const steps = useMemo(
-        () => buildProjectSteps(data?.hasScript ?? false),
-        [data?.hasScript],
+        () => buildProjectSteps(data?.hasScript ?? false, data?.kind),
+        [data?.hasScript, data?.kind],
     );
 
     return {

@@ -8,12 +8,20 @@ type HomeHeroProps = {
 
 // 根据 Agent 类型生成标题高亮文案
 function getHighlightText(activeTab: HomeAgentTab) {
-    return activeTab === "novel" ? "专属短剧" : "创作想法";
+    if (activeTab === "novel") {
+        return "专属短剧";
+    }
+
+    if (activeTab === "video") {
+        return "专属短视频";
+    }
+
+    return "创作想法";
 }
 
 // 根据 Agent 类型生成标题动作文案
 function getActionText(activeTab: HomeAgentTab) {
-    return activeTab === "novel" ? "一起创作" : "一起聊聊";
+    return activeTab === "creative" ? "一起聊聊" : "一起创作";
 }
 
 // 渲染首页 Hero 标题

@@ -4,6 +4,7 @@ import { AuthLayout } from "@/layouts/AuthLayout";
 import { RootLayout } from "@/layouts/RootLayout";
 import { LoginPage } from "@/pages/LoginPage";
 import { NovelPage } from "@/pages/NovelPage";
+import { VideoPage } from "@/pages/VideoPage";
 import { CanvasPage } from "@/pages/CanvasPage";
 import { EpisodeEditPage } from "@/pages/EpisodeEditPage";
 import { ProjectPage } from "@/pages/ProjectPage";
@@ -36,6 +37,15 @@ export const router = createHashRouter([
         errorElement: <RouteErrorFallback />,
     },
     {
+        path: "/video/project/:projectId",
+        element: <ProjectPage />,
+    },
+    {
+        path: "/video/project/:projectId/episode/:serieId/edit",
+        element: <EpisodeEditPage />,
+        errorElement: <RouteErrorFallback />,
+    },
+    {
         path: "/",
         element: <RootLayout />,
         children: [
@@ -47,6 +57,10 @@ export const router = createHashRouter([
             {
                 path: "novel",
                 element: <NovelPage />,
+            },
+            {
+                path: "video",
+                element: <VideoPage />,
             },
             {
                 path: "asset",

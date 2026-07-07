@@ -36,6 +36,22 @@ export type ScriptSummaryResult = {
     projectTitle: string;
 };
 
+// VideoOutline 短视频剧情大纲（精简结构）
+export type VideoOutline = {
+    text: string;
+};
+
+// VideoOutlineResult 短视频大纲 Agent 响应
+export type VideoOutlineResult = {
+    agentId: string;
+    agentName: string;
+    outline: VideoOutline;
+    text: string;
+    projectId: number;
+    scriptId: number;
+    projectTitle: string;
+};
+
 // GenerateScriptSummaryPayload 剧本摘要请求体
 export type GenerateScriptSummaryPayload = {
     project_id: number;
@@ -44,6 +60,14 @@ export type GenerateScriptSummaryPayload = {
 // 为已有剧本草稿生成结构化摘要
 export function generateScriptSummary(payload: GenerateScriptSummaryPayload) {
     return request<ScriptSummaryResult>("/agent/script_summary", {
+        method: "POST",
+        data: payload,
+    });
+}
+
+// 为已有剧本草稿调用海智 workflow 生成短视频剧情大纲
+export function generateVideoOutline(payload: GenerateScriptSummaryPayload) {
+    return request<VideoOutlineResult>("/agent/video_outline", {
         method: "POST",
         data: payload,
     });

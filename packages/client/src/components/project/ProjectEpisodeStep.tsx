@@ -6,6 +6,7 @@ import { ProjectEpisodeMoreActionsPopover } from "@/components/project/ProjectEp
 import { RenameDialog } from "@/components/ui/rename-dialog";
 import { useProjectSeries } from "@/hooks/useProjectSeries";
 import { getEpisodeEditPath } from "@/lib/episodeEditPaths";
+import type { ProjectKind } from "@/lib/projectSteps";
 import {
     formatSerieEpisodeCardTitle,
     formatSerieEpisodeStats,
@@ -16,11 +17,19 @@ import { cn } from "@/lib/utils";
 
 type ProjectEpisodeStepProps = {
     projectId: number;
+    kind?: ProjectKind;
 };
 
-// 渲染分集视频步骤内容
-export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
+// 渲染分集视频 / 短视频步骤内容
+export function ProjectEpisodeStep({ projectId, kind = "novel" }: ProjectEpisodeStepProps) {
     const navigate = useNavigate();
+    const isVideo = kind === "video";
+    // stepTitle 步骤标题：短剧「分集视频」，短视频「短视频」
+    const stepTitle = isVideo ? "短视频" : "分集视频";
+    // unitLabel 单位文案：短剧「集」，短视频「条」
+    const unitLabel = isVideo ? "条" : "集";
+    // addLabel 新增按钮文案
+    const addLabel = isVideo ? "新增一条" : "新增一集";
     const {
         series,
         loading,
@@ -31,7 +40,7 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
         addSerie,
         deleteSeries,
         renameSerie,
-    } = useProjectSeries(projectId);
+    } = useProjectSeries(projectId, kind);
     // renamingSerieId 当前打开重命名弹窗的分集 ID
     const [renamingSerieId, setRenamingSerieId] = useState<number | null>(null);
 
@@ -52,12 +61,12 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
         void addSerie();
     }, [addSerie]);
 
-    // 进入分集编辑页
+    // 进入分集 / 短视频编辑页
     const handleOpenEdit = useCallback(
         (serieId: number) => {
-            navigate(getEpisodeEditPath(projectId, serieId));
+            navigate(getEpisodeEditPath(projectId, serieId, undefined, kind));
         },
-        [navigate, projectId],
+        [kind, navigate, projectId],
     );
 
     // 打开重命名弹窗
@@ -99,9 +108,11 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
             <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                     <h2 className="text-[28px] font-semibold tracking-tight text-slate-900">
-                        分集视频
+                        {stepTitle}
                     </h2>
-                    <p className="text-sm text-slate-500">共 {series.length} 集</p>
+                    <p className="text-sm text-slate-500">
+                        共 {series.length} {unitLabel}
+                    </p>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-3">
@@ -112,7 +123,7 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
                         onClick={handleAddSerie}
                     >
                         <Plus className="size-4" strokeWidth={2} />
-                        新增一集
+                        {addLabel}
                     </button>
                     <button
                         type="button"
@@ -158,7 +169,7 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
                                             {statusLabel}
                                         </span>
                                         <h3 className="truncate text-lg font-semibold text-slate-900">
-                                            {formatSerieEpisodeCardTitle(serie, episodeIndex)}
+                                            {formatSerieEpisodeCardTitle(serie, episodeIndex, kind)}
                                         </h3>
                                         <p className="text-sm text-slate-500">
                                             {formatSerieEpisodeStats(serie)}
@@ -192,7 +203,9 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
                                 "col-span-full flex min-h-[220px] flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-slate-200 bg-white text-center",
                             )}
                         >
-                            <p className="text-sm text-slate-500">还没有分集，点击右上角新增一集</p>
+                            <p className="text-sm text-slate-500">
+                                还没有内容，点击右上角{addLabel}
+                            </p>
                             <button
                                 type="button"
                                 className="inline-flex cursor-pointer items-center gap-1 rounded-full bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-black/85 disabled:cursor-not-allowed disabled:opacity-60"
@@ -200,7 +213,7 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
                                 onClick={handleAddSerie}
                             >
                                 <Plus className="size-4" strokeWidth={2} />
-                                新增一集
+                                {addLabel}
                             </button>
                         </div>
                     ) : null}
@@ -209,9 +222,9 @@ export function ProjectEpisodeStep({ projectId }: ProjectEpisodeStepProps) {
 
             <RenameDialog
                 open={renamingSerieId !== null}
-                title="重命名分集"
-                description={`第${renamingEpisodeIndex}集的展示名称`}
-                inputLabel="分集名称"
+                title={isVideo ? "重命名短视频" : "重命名分集"}
+                description={`第${renamingEpisodeIndex}${unitLabel}的展示名称`}
+                inputLabel={isVideo ? "名称" : "分集名称"}
                 initialValue={renamingSerie ? resolveSerieEditableSubtitle(renamingSerie) : ""}
                 saving={renamingSerie ? renamingSerieIds.includes(renamingSerie.id) : false}
                 onClose={handleCloseRename}

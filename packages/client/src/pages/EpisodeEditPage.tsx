@@ -1,6 +1,6 @@
 // 分集编辑页：全屏分镜脚本编辑
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { EpisodeEditAssetSidebar } from "@/components/episode/EpisodeEditAssetSidebar";
 import { EpisodeEditVideoPanel } from "@/components/episode/EpisodeEditVideoPanel";
 import { EpisodeEditHeader } from "@/components/episode/EpisodeEditHeader";
@@ -13,7 +13,7 @@ import { useSerieEditor } from "@/hooks/useSerieEditor";
 import { useSerieFragmentGenerationPoller } from "@/hooks/useSerieFragmentGenerationPoller";
 import type { VideoAspectRatioId, VideoResolution } from "@/lib/generationOptions";
 import type { ImageStyleId } from "@/lib/imageStyles";
-import { getProjectPagePath } from "@/lib/projectPaths";
+import { getProjectPagePath, type ProjectKind } from "@/lib/projectPaths";
 import type { SerieFragment } from "@/lib/serieFragments";
 import {
     createStoryboardFragment,
@@ -30,7 +30,16 @@ import {
 import { upsertSerieFragmentGenerationTask } from "@/lib/serieFragmentGenerationTask";
 
 // 格式化编辑页标题
-function formatSerieEditorTitle(serie: NonNullable<ReturnType<typeof useSerieEditor>["serie"]>) {
+// 短剧：第 1 集：第一集；短视频：仅 serie.name（如「第 1 条」），不拼 subtitle
+function formatSerieEditorTitle(
+    serie: NonNullable<ReturnType<typeof useSerieEditor>["serie"]>,
+    kind: ProjectKind = "novel",
+) {
+    // 短视频不展示冗余 subtitle 后缀
+    if (kind === "video") {
+        return serie.name;
+    }
+
     const subtitle = resolveSerieEditableSubtitle(serie);
 
     if (subtitle && subtitle !== serie.name.trim()) {
@@ -66,6 +75,7 @@ function remapFragmentDraftsAfterSave(
 // 渲染分集编辑页
 export function EpisodeEditPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { projectId, serieId } = useParams<{ projectId: string; serieId: string }>();
     // numericProjectId 项目 ID
     const numericProjectId = Number(projectId);
@@ -564,26 +574,29 @@ export function EpisodeEditPage() {
         ],
     );
 
+    // kind 项目类型（按当前路径前缀推断，/video 为短视频，其余为短剧）
+    const kind = (location.pathname.startsWith("/video") ? "video" : "novel") as ProjectKind;
+
     // pageTitle 页面标题
     const pageTitle = useMemo(() => {
         if (!serie) {
-            return "分集编辑";
+            return kind === "video" ? "短视频编辑" : "分集编辑";
         }
 
-        return formatSerieEditorTitle(serie);
-    }, [serie]);
+        return formatSerieEditorTitle(serie, kind);
+    }, [kind, serie]);
 
-    // 返回项目分集列表
+    // 返回项目分集 / 短视频列表（按当前路径前缀推断项目类型）
     const handleBack = useCallback(() => {
         if (Number.isFinite(numericProjectId) && numericProjectId > 0) {
-            navigate(getProjectPagePath(numericProjectId), {
+            navigate(getProjectPagePath(numericProjectId, kind), {
                 state: { returnStep: "episodes" as const },
             });
             return;
         }
 
         navigate(-1);
-    }, [navigate, numericProjectId]);
+    }, [kind, navigate, numericProjectId]);
 
     if (!Number.isFinite(numericProjectId) || numericProjectId <= 0) {
         return (

@@ -1,5 +1,6 @@
 import { runScriptSummaryAgent } from "../agents/implementations/scriptSummary/agent.js";
 import type {
+    ScriptSummary,
     ScriptSummaryAgentInput,
     ScriptSummaryResult,
 } from "../agents/implementations/scriptSummary/types.js";
@@ -21,6 +22,7 @@ export class ScriptSummaryService {
             creative: input.creative.trim(),
             episodeCount: input.episodeCount,
             imageStyleId: input.imageStyleId,
+            kind: input.kind,
         });
     }
 
@@ -36,7 +38,7 @@ export class ScriptSummaryService {
             return {
                 agentId: "script-summary",
                 agentName: "剧本摘要",
-                summary: script.summary,
+                summary: script.summary as ScriptSummary,
                 text: script.summaryText ?? "",
                 projectId: script.projectId,
                 scriptId: script.id,

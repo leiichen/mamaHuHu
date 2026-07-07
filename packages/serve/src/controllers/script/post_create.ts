@@ -17,6 +17,7 @@ export const handler = asyncHandler<AuthRequest>(async (req, res) => {
         creative: body.creative,
         episodeCount: body.episodeCount,
         imageStyleId: body.imageStyleId,
+        kind: body.kind,
     });
 
     return success(res, result, "剧本草稿创建成功");
