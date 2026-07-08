@@ -70,6 +70,8 @@ export type BuildSeedanceGenerateBodyInput = {
     aspect_ratio?: string;
     resolution?: string;
     video_style_id?: ImageStyleId;
+    // targetDurationSec 分镜手动设定的目标时长（秒），优先级高于 content 内 @duration 标签
+    targetDurationSec?: number;
 };
 
 // SeedanceReferenceFile 参考文件条目（图片或音频）
@@ -365,6 +367,21 @@ export function buildSeedancePromptText(
 // 虎牙 Seedance 默认视频时长（秒）。虎牙 duration min=4 max=15，智能时长 -1 不被接受，故回退默认 8
 const SEEDANCE_DEFAULT_DURATION_SEC = 8;
 
+// SEEDANCE_DURATION_MIN / SEEDANCE_DURATION_MAX 虎牙 Seedance duration 合法区间（秒）
+const SEEDANCE_DURATION_MIN = 4;
+const SEEDANCE_DURATION_MAX = 15;
+
+// clampSeedanceDuration 将手动设定的时长归整到虎牙合法区间；<4 视为无效回退默认 8 秒
+function clampSeedanceDuration(seconds: number): number {
+    const value = Math.trunc(seconds);
+
+    if (!Number.isFinite(value) || value < SEEDANCE_DURATION_MIN) {
+        return SEEDANCE_DEFAULT_DURATION_SEC;
+    }
+
+    return Math.min(value, SEEDANCE_DURATION_MAX);
+}
+
 // 从引用资产组装 Seedance 的虎牙扁平 parameters 结构
 function buildSeedanceParameters(
     input: BuildSeedanceGenerateBodyInput,
@@ -377,12 +394,15 @@ function buildSeedanceParameters(
         input.video_style_id,
     );
 
-    // 智能时长 -1 在虎牙不合法，回退到默认 8 秒；其余 1-15 秒原样透传（虎牙要求 min 4，<4 也回退默认）
-    const rawDuration = resolveSeedanceDurationFromContent(input.content);
+    // 时长优先级：分镜手动设定的目标时长 > content 内 @duration 标签合计 > 默认 8 秒
+    // 智能时长 -1 在虎牙不合法，content 标签缺失或合计 <4 时回退默认 8 秒
+    const contentDuration = resolveSeedanceDurationFromContent(input.content);
     const duration =
-        rawDuration === SEEDANCE_SMART_DURATION || rawDuration < 4
-            ? SEEDANCE_DEFAULT_DURATION_SEC
-            : rawDuration;
+        typeof input.targetDurationSec === "number" && Number.isFinite(input.targetDurationSec)
+            ? clampSeedanceDuration(input.targetDurationSec)
+            : contentDuration === SEEDANCE_SMART_DURATION || contentDuration < 4
+              ? SEEDANCE_DEFAULT_DURATION_SEC
+              : contentDuration;
 
     const parameters: SeedanceGenerateParameters = {
         prompt: promptText,
@@ -390,7 +410,8 @@ function buildSeedanceParameters(
         aspectRatio: resolveSeedanceRatio(input.aspect_ratio),
         resolution: resolveSeedanceResolution(input.resolution),
         duration,
-        generateAudio: false,
+        // 默认生成音频（无声音参数时按有声音处理）
+        generateAudio: true,
         isUploadAsset: true,
     };
 

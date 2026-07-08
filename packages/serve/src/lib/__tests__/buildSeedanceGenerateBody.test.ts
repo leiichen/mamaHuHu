@@ -209,7 +209,7 @@ describe("buildSeedanceGenerateBody", () => {
                 aspectRatio: "9:16",
                 resolution: "480p",
                 duration: 5,
-                generateAudio: false,
+                generateAudio: true,
                 isUploadAsset: true,
             },
         });
@@ -233,5 +233,45 @@ describe("buildSeedanceGenerateBody", () => {
                 model_id: "seedance-2",
             }).parameters.duration,
         ).toBe(8);
+    });
+
+    it("手动目标时长优先于 content 内 @duration 标签", () => {
+        expect(
+            buildSeedanceGenerateBody({
+                content: "在时代广场跳极乐净土 @duration:5",
+                model_id: "seedance-2",
+                targetDurationSec: 10,
+            }).parameters.duration,
+        ).toBe(10);
+    });
+
+    it("手动目标时长在无标签时直接生效", () => {
+        expect(
+            buildSeedanceGenerateBody({
+                content: "纯文本镜头",
+                model_id: "seedance-2",
+                targetDurationSec: 10,
+            }).parameters.duration,
+        ).toBe(10);
+    });
+
+    it("手动目标时长低于最小值时回退默认 8", () => {
+        expect(
+            buildSeedanceGenerateBody({
+                content: "纯文本镜头",
+                model_id: "seedance-2",
+                targetDurationSec: 3,
+            }).parameters.duration,
+        ).toBe(8);
+    });
+
+    it("手动目标时长超过最大值时封顶为 15", () => {
+        expect(
+            buildSeedanceGenerateBody({
+                content: "纯文本镜头",
+                model_id: "seedance-2",
+                targetDurationSec: 20,
+            }).parameters.duration,
+        ).toBe(15);
     });
 });

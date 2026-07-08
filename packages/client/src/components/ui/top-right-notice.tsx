@@ -7,7 +7,7 @@ type TopRightNoticeProps = {
     message: string;
     open: boolean;
     onClose: () => void;
-    variant?: "error" | "warning";
+    variant?: "error" | "warning" | "success";
     className?: string;
 };
 
@@ -20,6 +20,10 @@ const variantClassMap = {
     warning: {
         panel: "border-amber-200 bg-amber-50 text-amber-800",
         button: "text-amber-500 hover:bg-amber-100 hover:text-amber-700",
+    },
+    success: {
+        panel: "border-emerald-200 bg-emerald-50 text-emerald-700",
+        button: "text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700",
     },
 } as const;
 

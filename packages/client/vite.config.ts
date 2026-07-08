@@ -39,6 +39,8 @@ export default defineConfig({
     },
     server: {
         port: 12345,
+        // 监听所有网卡，允许局域网内其他机器通过本机 IP 访问（配合 host: true）
+        host: true,
     },
     test: {
         environment: "jsdom",

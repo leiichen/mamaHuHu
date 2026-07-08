@@ -18,6 +18,8 @@ export type SerieParams = {
         resolution: string;
         videoStyleId?: string;
     };
+    // exportedVideo 导出的完整视频（key 为七牛存储 key）
+    exportedVideo?: { key: string; createdAt: number };
 };
 
 // ProjectSerie 项目集数
@@ -189,6 +191,66 @@ export function generateSerieFragment(payload: GenerateSerieFragmentPayload) {
 // 轮询分镜视频生成任务进度
 export function pollSerieFragmentGeneration(payload: PollSerieFragmentGenerationPayload) {
     return request<PollSerieFragmentGenerationResult>("/serie/generate_status", {
+        method: "POST",
+        data: payload,
+    });
+}
+
+// ExportSeriePayload 分集导出请求体
+export type ExportSeriePayload = {
+    project_id: number;
+    serie_id: number;
+};
+
+// ExportSerieResult 分集导出任务提交结果
+export type ExportSerieResult = {
+    jobId: string;
+};
+
+// PollSerieExportPayload 分集导出轮询请求体
+export type PollSerieExportPayload = {
+    project_id: number;
+    serie_id: number;
+    job_id: string;
+};
+
+// PollSerieExportResult 分集导出轮询结果
+export type PollSerieExportResult = {
+    status: "queued" | "running" | "succeeded" | "failed";
+    progress?: number;
+    message?: string;
+    result?: {
+        videoKey: string;
+        videoUrl: string;
+        createdAt: number;
+    };
+};
+
+// 提交分集完整视频导出任务
+export function exportSerie(payload: ExportSeriePayload) {
+    return request<ExportSerieResult>("/serie/export", {
+        method: "POST",
+        data: payload,
+    });
+}
+
+// 轮询分集导出任务状态
+export function pollSerieExport(payload: PollSerieExportPayload) {
+    return request<PollSerieExportResult>("/serie/export_status", {
+        method: "POST",
+        data: payload,
+    });
+}
+
+// RefillSerieCoversResult 封面回填结果
+export type RefillSerieCoversResult = {
+    refilled: number[];
+    failed: number[];
+};
+
+// 为分集下缺封面的已生成分镜回填首帧
+export function refillSerieCovers(payload: { project_id: number; serie_id: number }) {
+    return request<RefillSerieCoversResult>("/serie/refill_covers", {
         method: "POST",
         data: payload,
     });

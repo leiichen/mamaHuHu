@@ -74,6 +74,25 @@ export const pollSerieGenerateSchema = z.object({
     task_id: z.string().trim().min(1, "任务 ID 无效"),
 });
 
+// exportSerieSchema 分集导出请求体
+export const exportSerieSchema = z.object({
+    project_id: z.coerce.number().int().positive("项目 ID 无效"),
+    serie_id: z.coerce.number().int().positive("分集 ID 无效"),
+});
+
+// pollSerieExportSchema 分集导出任务轮询请求体
+export const pollSerieExportSchema = z.object({
+    project_id: z.coerce.number().int().positive("项目 ID 无效"),
+    serie_id: z.coerce.number().int().positive("分集 ID 无效"),
+    job_id: z.string().trim().min(1, "任务 ID 无效"),
+});
+
+// refillSerieCoversSchema 分镜封面回填请求体
+export const refillSerieCoversSchema = z.object({
+    project_id: z.coerce.number().int().positive("项目 ID 无效"),
+    serie_id: z.coerce.number().int().positive("分集 ID 无效"),
+});
+
 /*
  * 以下为各 schema 推导出的请求参数类型，供控制器复用（单一来源，避免手写重复类型）
  */
@@ -86,3 +105,6 @@ export type UpdateSerieFragmentsInput = z.infer<typeof updateSerieFragmentsSchem
 export type UpdateSerieVideoGenerationInput = z.infer<typeof updateSerieVideoGenerationSchema>;
 export type GenerateSerieInput = z.infer<typeof generateSerieSchema>;
 export type PollSerieGenerateInput = z.infer<typeof pollSerieGenerateSchema>;
+export type ExportSerieInput = z.infer<typeof exportSerieSchema>;
+export type PollSerieExportInput = z.infer<typeof pollSerieExportSchema>;
+export type RefillSerieCoversInput = z.infer<typeof refillSerieCoversSchema>;

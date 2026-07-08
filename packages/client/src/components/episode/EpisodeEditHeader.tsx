@@ -1,5 +1,5 @@
 // 分集编辑页：顶部导航栏
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Download, Loader2 } from "lucide-react";
 import { HuyaArtApiKeySettingsButton } from "@/components/home/HuyaArtApiKeySettingsButton";
 import { ImageStylePopover } from "@/components/prompt/ImageStylePopover";
 import { ModelSelectPopover } from "@/components/prompt/ModelSelectPopover";
@@ -19,6 +19,10 @@ type EpisodeEditHeaderProps = {
     onModelIdChange: (modelId: string) => void;
     onAspectRatioChange: (aspectRatio: VideoAspectRatioId) => void;
     onVideoResolutionChange: (resolution: VideoResolution) => void;
+    // onExport 导出整集完整视频
+    onExport?: () => void;
+    // isExporting 是否导出中
+    isExporting?: boolean;
 };
 
 // 渲染分集编辑页顶部栏
@@ -33,6 +37,8 @@ export function EpisodeEditHeader({
     onModelIdChange,
     onAspectRatioChange,
     onVideoResolutionChange,
+    onExport,
+    isExporting = false,
 }: EpisodeEditHeaderProps) {
     return (
         <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-black/5 bg-[#f5f5f5]/95 px-4 backdrop-blur md:px-6">
@@ -77,6 +83,21 @@ export function EpisodeEditHeader({
                     value={videoResolution}
                     onValueChange={onVideoResolutionChange}
                 />
+                {onExport ? (
+                    <button
+                        type="button"
+                        disabled={isExporting}
+                        onClick={onExport}
+                        className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-full bg-slate-900 px-3 text-xs font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {isExporting ? (
+                            <Loader2 className="size-3.5 animate-spin" strokeWidth={2} />
+                        ) : (
+                            <Download className="size-3.5" strokeWidth={1.8} />
+                        )}
+                        {isExporting ? "导出中..." : "导出"}
+                    </button>
+                ) : null}
                 <HuyaArtApiKeySettingsButton variant="episode" />
             </div>
         </header>

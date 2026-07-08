@@ -6,10 +6,11 @@ import { EpisodeEditVideoPanel } from "@/components/episode/EpisodeEditVideoPane
 import { EpisodeEditHeader } from "@/components/episode/EpisodeEditHeader";
 import { EpisodeEditPreview } from "@/components/episode/EpisodeEditPreview";
 import { EpisodeEditStoryboardList } from "@/components/episode/EpisodeEditStoryboardList";
-import { generateSerieFragment, updateProjectSerieFragments, updateProjectSerieVideoGeneration, type ProjectSerie } from "@/api/serie";
+import { fetchSerieDetail, generateSerieFragment, exportSerie, refillSerieCovers, updateProjectSerieFragments, updateProjectSerieVideoGeneration, type PollSerieExportResult, type ProjectSerie } from "@/api/serie";
 import { TopCenterToast } from "@/components/ui/top-center-toast";
 import { TopRightNotice } from "@/components/ui/top-right-notice";
 import { useSerieEditor } from "@/hooks/useSerieEditor";
+import { useSerieExportPoller } from "@/hooks/useSerieExportPoller";
 import { useSerieFragmentGenerationPoller } from "@/hooks/useSerieFragmentGenerationPoller";
 import type { VideoAspectRatioId, VideoResolution } from "@/lib/generationOptions";
 import type { ImageStyleId } from "@/lib/imageStyles";
@@ -28,6 +29,7 @@ import {
     type SerieVideoGenerationSettings,
 } from "@/lib/serieVideoGeneration";
 import { upsertSerieFragmentGenerationTask } from "@/lib/serieFragmentGenerationTask";
+import { readSerieExportTask, upsertSerieExportTask } from "@/lib/serieExportTask";
 
 // 格式化编辑页标题
 // 短剧：第 1 集：第一集；短视频：仅 serie.name（如「第 1 条」），不拼 subtitle
@@ -108,6 +110,10 @@ export function EpisodeEditPage() {
     const [isSubmittingFragment, setIsSubmittingFragment] = useState(false);
     // generationFailureNotice 生成失败通知（仅手动关闭）
     const [generationFailureNotice, setGenerationFailureNotice] = useState("");
+    // exportSuccessNotice 导出成功通知（仅手动关闭）
+    const [exportSuccessNotice, setExportSuccessNotice] = useState("");
+    // isSubmittingExport 导出任务提交中
+    const [isSubmittingExport, setIsSubmittingExport] = useState(false);
     // errorNotifyKey 强制重复展示相同错误 toast
     const [errorNotifyKey, setErrorNotifyKey] = useState(0);
     // videoGeneration 分集视频生成参数（模型、比例、分辨率）
@@ -139,6 +145,48 @@ export function EpisodeEditPage() {
             Object.fromEntries(fragments.map((fragment) => [fragment.id, fragment.reference])),
         );
     }, [fragments, serieSyncKey]);
+
+    // 自动回填：分集加载后若存在「已生成视频但缺封面」的历史分镜，触发首帧回填并刷新
+    useEffect(() => {
+        if (!serieSyncKey) {
+            return;
+        }
+
+        const needsRefill = fragments.some(
+            (fragment) => Boolean(fragment.video) && !fragment.cover,
+        );
+
+        if (!needsRefill) {
+            return;
+        }
+
+        let cancelled = false;
+
+        void (async () => {
+            try {
+                const result = await refillSerieCovers({
+                    project_id: numericProjectId,
+                    serie_id: numericSerieId,
+                });
+
+                if (cancelled || result.refilled.length === 0) {
+                    return;
+                }
+
+                const refreshed = await fetchSerieDetail(numericProjectId, numericSerieId);
+
+                if (!cancelled) {
+                    applySerie(refreshed);
+                }
+            } catch {
+                // 回填失败静默处理，不影响编辑
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [applySerie, fragments, numericProjectId, numericSerieId, serieSyncKey]);
 
     // 展示校验失败 toast（notifyKey 保证重复触发）
     const handleSaveValidationError = useCallback(
@@ -432,6 +480,64 @@ export function EpisodeEditPage() {
         videoGeneration.videoStyleId,
     ]);
 
+    // 导出成功：触发下载并展示成功通知
+    const handleExportSucceeded = useCallback((result: PollSerieExportResult["result"]) => {
+        if (result?.videoUrl) {
+            const anchor = document.createElement("a");
+            anchor.href = result.videoUrl;
+            anchor.download = `${serie?.name ?? "导出视频"}.mp4`;
+            anchor.rel = "noopener";
+            document.body.appendChild(anchor);
+            anchor.click();
+            document.body.removeChild(anchor);
+        }
+
+        setExportSuccessNotice("导出完成，已开始下载完整视频");
+    }, [serie?.name]);
+
+    // 导出失败：展示失败通知
+    const handleExportFailed = useCallback((message: string) => {
+        setGenerationFailureNotice(message || "导出失败");
+    }, []);
+
+    // 分集导出任务轮询（仅当存在未完成导出任务时启用）
+    const exportPollerEnabled =
+        Number.isFinite(numericProjectId) &&
+        Number.isFinite(numericSerieId) &&
+        Boolean(readSerieExportTask(numericSerieId));
+
+    const { isExporting } = useSerieExportPoller({
+        projectId: numericProjectId,
+        serieId: numericSerieId,
+        enabled: exportPollerEnabled,
+        onSucceeded: handleExportSucceeded,
+        onFailed: handleExportFailed,
+    });
+
+    // 提交分集完整视频导出任务
+    const handleExportSerie = useCallback(async () => {
+        setIsSubmittingExport(true);
+        setErrorMessage("");
+
+        try {
+            const result = await exportSerie({
+                project_id: numericProjectId,
+                serie_id: numericSerieId,
+            });
+
+            upsertSerieExportTask({
+                projectId: numericProjectId,
+                serieId: numericSerieId,
+                jobId: result.jobId,
+                createdAt: Date.now(),
+            });
+        } catch {
+            setErrorMessage("提交导出任务失败");
+        } finally {
+            setIsSubmittingExport(false);
+        }
+    }, [numericProjectId, numericSerieId, setErrorMessage]);
+
     // 更新当前分镜 content 草稿（切换分镜时由编辑区回写）
     const handleContentDraftChange = useCallback((fragmentId: string, content: string) => {
         setSavedContentsByFragmentId((current) => ({
@@ -574,6 +680,34 @@ export function EpisodeEditPage() {
         ],
     );
 
+    // 设置某分镜目标时长并即时持久化（不走草稿，仿视频参数保存）
+    const handleFragmentDurationChange = useCallback(
+        (fragmentId: string, seconds: number) => {
+            const nextFragments = storyboardFragments.map((fragment) =>
+                fragment.id === fragmentId ? { ...fragment, durationSec: seconds } : fragment,
+            );
+
+            setStoryboardFragments(nextFragments);
+            void persistStoryboardFragments(mergeStoryboardFragmentDrafts(nextFragments));
+        },
+        [mergeStoryboardFragmentDrafts, persistStoryboardFragments, storyboardFragments],
+    );
+
+    // 清除某分镜目标时长并即时持久化
+    const handleFragmentDurationClear = useCallback(
+        (fragmentId: string) => {
+            const nextFragments = storyboardFragments.map((fragment) =>
+                fragment.id === fragmentId
+                    ? { ...fragment, durationSec: undefined }
+                    : fragment,
+            );
+
+            setStoryboardFragments(nextFragments);
+            void persistStoryboardFragments(mergeStoryboardFragmentDrafts(nextFragments));
+        },
+        [mergeStoryboardFragmentDrafts, persistStoryboardFragments, storyboardFragments],
+    );
+
     // kind 项目类型（按当前路径前缀推断，/video 为短视频，其余为短剧）
     const kind = (location.pathname.startsWith("/video") ? "video" : "novel") as ProjectKind;
 
@@ -627,6 +761,8 @@ export function EpisodeEditPage() {
                 onModelIdChange={handleVideoModelIdChange}
                 onAspectRatioChange={handleVideoAspectRatioChange}
                 onVideoResolutionChange={handleVideoResolutionChange}
+                onExport={handleExportSerie}
+                isExporting={isExporting || isSubmittingExport}
             />
 
             <TopCenterToast
@@ -640,6 +776,13 @@ export function EpisodeEditPage() {
                 message={generationFailureNotice}
                 open={Boolean(generationFailureNotice)}
                 onClose={() => setGenerationFailureNotice("")}
+            />
+
+            <TopRightNotice
+                message={exportSuccessNotice}
+                open={Boolean(exportSuccessNotice)}
+                variant="success"
+                onClose={() => setExportSuccessNotice("")}
             />
 
             {loading ? (
@@ -679,6 +822,8 @@ export function EpisodeEditPage() {
                         onInsert={handleInsertFragment}
                         onDelete={handleDeleteFragment}
                         onDuplicate={handleDuplicateFragment}
+                        onFragmentDurationChange={handleFragmentDurationChange}
+                        onFragmentDurationClear={handleFragmentDurationClear}
                     />
                 </div>
             )}

@@ -2,6 +2,7 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { VideoDurationPopover } from "@/components/prompt/VideoDurationPopover";
 import { resolveSerieFragmentCoverKey, resolveSerieFragmentDisplayLabel, type SerieFragment } from "@/lib/serieFragments";
 import { resolveStoragePreviewUrl } from "@/lib/storageUrl";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,10 @@ type EpisodeEditStoryboardListProps = {
     onInsert: (index: number) => void;
     onDelete: (index: number) => void | Promise<void>;
     onDuplicate: (index: number) => void;
+    // onFragmentDurationChange 设置某分镜目标时长（秒）
+    onFragmentDurationChange?: (fragmentId: string, seconds: number) => void;
+    // onFragmentDurationClear 清除某分镜目标时长
+    onFragmentDurationClear?: (fragmentId: string) => void;
 };
 
 type EpisodeEditStoryboardClipProps = {
@@ -20,7 +25,9 @@ type EpisodeEditStoryboardClipProps = {
     index: number;
     isActive: boolean;
     onSelect: (fragmentId: string) => void;
-    clipRef: (node: HTMLButtonElement | null) => void;
+    clipRef: (node: HTMLDivElement | null) => void;
+    onDurationChange?: (fragmentId: string, seconds: number) => void;
+    onDurationClear?: (fragmentId: string) => void;
 };
 
 type EpisodeEditStoryboardInsertSlotProps = {
@@ -110,24 +117,24 @@ const EpisodeEditStoryboardClip = memo(function EpisodeEditStoryboardClip({
     isActive,
     onSelect,
     clipRef,
+    onDurationChange,
+    onDurationClear,
 }: EpisodeEditStoryboardClipProps) {
     // coverKey 分镜封面 key
     const coverKey = resolveSerieFragmentCoverKey(fragment);
     // coverUrl 分镜封面预览地址
     const coverUrl = coverKey ? resolveStoragePreviewUrl(coverKey) : null;
-    // fragmentLabel 分镜展示标签
-    const fragmentLabel = resolveSerieFragmentDisplayLabel(fragment, index);
+    // order 两位序号
+    const order = String(index + 1).padStart(2, "0");
 
     return (
-        <button
-            ref={clipRef}
-            type="button"
-            className="flex w-[88px] shrink-0 cursor-pointer flex-col items-center gap-2 text-left"
-            onClick={() => onSelect(fragment.id)}
-        >
-            <div
+        <div ref={clipRef} className="flex w-[88px] shrink-0 cursor-pointer flex-col items-center gap-2">
+            <button
+                type="button"
+                aria-label={`选择片段 ${order}`}
+                onClick={() => onSelect(fragment.id)}
                 className={cn(
-                    "flex h-[132px] w-full items-center justify-center rounded-[20px] bg-[#f0f0f2] p-1.5 transition",
+                    "flex h-[132px] w-full cursor-pointer items-center justify-center rounded-[20px] bg-[#f0f0f2] p-1.5 transition",
                     isActive ? "border-2 border-slate-800" : "border-2 border-transparent",
                 )}
             >
@@ -135,20 +142,28 @@ const EpisodeEditStoryboardClip = memo(function EpisodeEditStoryboardClip({
                     {coverUrl ? (
                         <img
                             src={coverUrl}
-                            alt={fragmentLabel}
+                            alt={`片段 ${order}`}
                             className="size-full object-cover"
                         />
                     ) : (
                         <span className="text-sm font-medium text-slate-400">
-                            {String(index + 1).padStart(2, "0")}
+                            {order}
                         </span>
                     )}
                 </div>
+            </button>
+            <div className="flex w-full flex-col items-center gap-1">
+                <span className="w-full truncate text-center text-xs text-slate-500">
+                    片段 {order}
+                </span>
+                <VideoDurationPopover
+                    popoverPlacement="top"
+                    value={fragment.durationSec}
+                    onChange={(seconds) => onDurationChange?.(fragment.id, seconds)}
+                    onClear={onDurationClear ? () => onDurationClear(fragment.id) : undefined}
+                />
             </div>
-            <span className="w-full truncate text-center text-xs text-slate-500">
-                {fragmentLabel}
-            </span>
-        </button>
+        </div>
     );
 });
 
@@ -160,11 +175,13 @@ export function EpisodeEditStoryboardList({
     onInsert,
     onDelete,
     onDuplicate,
+    onFragmentDurationChange,
+    onFragmentDurationClear,
 }: EpisodeEditStoryboardListProps) {
     // scrollRef 横向滚动容器
     const scrollRef = useRef<HTMLDivElement>(null);
-    // clipRefs 各分镜按钮引用
-    const clipRefs = useRef(new Map<string, HTMLButtonElement>());
+    // clipRefs 各分镜容器引用
+    const clipRefs = useRef(new Map<string, HTMLDivElement>());
     // pendingDeleteIndex 待确认删除的分镜索引
     const [pendingDeleteIndex, setPendingDeleteIndex] = useState<number | null>(null);
     // isDeletingFragment 分镜删除保存中
@@ -232,6 +249,8 @@ export function EpisodeEditStoryboardList({
                             index={index}
                             isActive={fragment.id === selectedFragmentId}
                             onSelect={onSelect}
+                            onDurationChange={onFragmentDurationChange}
+                            onDurationClear={onFragmentDurationClear}
                             clipRef={(node) => {
                                 if (node) {
                                     clipRefs.current.set(fragment.id, node);

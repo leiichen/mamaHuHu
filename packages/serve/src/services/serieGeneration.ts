@@ -3,6 +3,7 @@ import { NotFoundError } from "../lib/errors.js";
 import { assertProjectOwner } from "../lib/projectAccess.js";
 import { inferRemoteFileExt } from "../lib/remoteMedia.js";
 import { mergeSerieFragmentParams } from "../lib/serieFragmentParams.js";
+import { extractFirstFrameToBuffer } from "../lib/videoProcess.js";
 import type { SeedanceGenerateBody } from "../lib/buildSeedanceGenerateBody.js";
 import { serializeSerieFragmentRow } from "../lib/serieFragment.js";
 import { qiniuService } from "./qiniu.js";
@@ -71,6 +72,15 @@ async function finalizeSeedanceGeneratedVideo(
         videoResponse.headers.get("content-type") ?? "video/mp4",
     );
 
+    // 提取首帧作为分镜封面预览（复用已下载的视频 buffer，失败降级为空封面，不影响主流程）
+    let coverKey = "";
+    try {
+        const frameBuffer = await extractFirstFrameToBuffer(videoBuffer);
+        coverKey = (await qiniuService.uploadBuffer("image", frameBuffer, "jpg", "image/jpeg")).key;
+    } catch {
+        coverKey = "";
+    }
+
     const fragmentRow = await prisma.serie_fragment.findUnique({
         where: { id: fragmentId },
         select: { params: true },
@@ -94,7 +104,7 @@ async function finalizeSeedanceGeneratedVideo(
         where: { id: fragmentId },
         data: {
             video: video.key,
-            cover: "",
+            cover: coverKey,
             params: nextParams,
             ...(typeof durationSec === "number" && durationSec > 0
                 ? { duration_sec: durationSec }

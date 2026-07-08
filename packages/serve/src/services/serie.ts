@@ -232,6 +232,25 @@ export class SerieService {
 
         return formatSerie(updated, serializeFragmentsForApi(fragmentRows));
     }
+
+    // 持久化导出视频信息到分集 params.exportedVideo（用于再次下载/记录）
+    async persistExportedVideo(
+        userId: number,
+        projectId: number,
+        serieId: number,
+        payload: { key: string; createdAt: number },
+    ) {
+        const serie = await this.assertSerieOwner(userId, projectId, serieId);
+        const updated = await prisma.serie.update({
+            where: { id: serieId },
+            data: {
+                params: mergeSerieParams(serie, { exportedVideo: payload }),
+                updated_at: new Date(),
+            },
+        });
+
+        return updated;
+    }
 }
 
 // serieService 分集服务单例
