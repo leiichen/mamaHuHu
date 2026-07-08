@@ -82,3 +82,11 @@ export function generateVideoOutline(payload: GenerateScriptSummaryPayload) {
         data: payload,
     });
 }
+
+// 用户确认大纲后，创建角色/场景资产并生成图片
+export function confirmVideoOutline(payload: GenerateScriptSummaryPayload) {
+    return request<VideoOutlineResult>("/agent/video_outline_confirm", {
+        method: "POST",
+        data: payload,
+    });
+}

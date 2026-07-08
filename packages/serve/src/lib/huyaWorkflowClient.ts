@@ -199,18 +199,36 @@ export function parseVideoOutlineJson(outputs: unknown): VideoOutlineJson | null
         return null;
     }
 
+    const trimmedText = text.trim();
+
     // 尝试将文本解析为 JSON（workflow 可能返回 JSON 字符串）
     let parsed: unknown;
 
     try {
-        parsed = JSON.parse(text.trim());
+        parsed = JSON.parse(trimmedText);
     } catch {
-        // 若文本本身不是 JSON，尝试匹配 ```json ... ``` markdown 代码块
-        const codeBlockMatch = /```(?:json)?\s*([\s\S]*?)```/i.exec(text);
+        parsed = null;
+    }
 
+    // 直接解析失败 → 尝试提取 markdown ```json ... ``` 代码块
+    if (!parsed) {
+        const codeBlockMatch = /```(?:json)?\s*([\s\S]*?)```/i.exec(trimmedText);
         if (codeBlockMatch?.[1]) {
             try {
                 parsed = JSON.parse(codeBlockMatch[1].trim());
+            } catch {
+                parsed = null;
+            }
+        }
+    }
+
+    // 仍然失败 → 尝试从文本中截取第一个 { 到最后一个 } 之间的 JSON
+    if (!parsed) {
+        const firstBrace = trimmedText.indexOf("{");
+        const lastBrace = trimmedText.lastIndexOf("}");
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+            try {
+                parsed = JSON.parse(trimmedText.slice(firstBrace, lastBrace + 1));
             } catch {
                 return null;
             }
