@@ -1,16 +1,17 @@
 // 图片风格选择弹层（画布生图面板）
 import { useRef, useState, type ElementType } from "react";
-import { Check, ChevronDown, Smile } from "lucide-react";
+import { Check, ChevronDown, Plus, Smile } from "lucide-react";
+import { AddImageStyleDialog } from "@/components/prompt/AddImageStyleDialog";
 import { PromptPopoverPanel } from "@/components/prompt/PromptPopoverPanel";
 import { type PromptPopoverInteractionProps } from "@/components/prompt/promptPopoverUtils";
 import { usePopoverDismiss } from "@/hooks/usePopoverDismiss";
-import { getImageStyleLabel, IMAGE_STYLE_OPTIONS, type ImageStyleId } from "@/lib/imageStyles";
-import { getImageStylePreviewUrl } from "@/lib/imageStylePreviews";
+import { getImageStyleLabel, useAllImageStyleOptions, type ImageStyleId } from "@/lib/imageStyles";
 import { cn } from "@/lib/utils";
 
 type ImageStylePopoverProps = PromptPopoverInteractionProps & {
-    value?: ImageStyleId;
-    onValueChange?: (styleId: ImageStyleId | undefined) => void;
+    // value 选中的风格 ID；放宽为 string 以支持自定义风格（阶段一）
+    value?: ImageStyleId | string;
+    onValueChange?: (styleId: ImageStyleId | string | undefined) => void;
     panelTitle?: string;
     triggerFallbackLabel?: string;
     triggerIcon?: ElementType;
@@ -33,7 +34,12 @@ export function ImageStylePopover({
     const rootRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
-    const selectedLabel = getImageStyleLabel(value);
+    // addDialogOpen 新增风格弹窗开关
+    const [addDialogOpen, setAddDialogOpen] = useState(false);
+    // allOptions 合并内置与自定义风格的列表（自定义风格变化时自动刷新）
+    const allOptions = useAllImageStyleOptions();
+    const selectedOption = allOptions.find((option) => option.id === value) ?? null;
+    const selectedLabel = selectedOption?.label ?? getImageStyleLabel(value);
     const triggerLabel = selectedLabel ?? triggerFallbackLabel;
     // TriggerIcon 触发按钮图标组件
     const TriggerIcon = triggerIcon ?? Smile;
@@ -46,7 +52,7 @@ export function ImageStylePopover({
     };
 
     // 选中风格并关闭弹层
-    const handleSelectStyle = (styleId: ImageStyleId | undefined) => {
+    const handleSelectStyle = (styleId: ImageStyleId | string | undefined) => {
         onValueChange?.(styleId);
         setOpen(false);
     };
@@ -125,7 +131,18 @@ export function ImageStylePopover({
                             ) : null}
                             无风格
                         </button>
-                        {IMAGE_STYLE_OPTIONS.map((option) => {
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setOpen(false);
+                                setAddDialogOpen(true);
+                            }}
+                            className="relative inline-flex cursor-pointer items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-2 py-2.5 text-xs leading-5 text-slate-500 transition hover:border-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                        >
+                            <Plus className="size-3.5" strokeWidth={2} />
+                            新增风格
+                        </button>
+                        {allOptions.map((option) => {
                             const selected = value === option.id;
 
                             return (
@@ -140,12 +157,18 @@ export function ImageStylePopover({
                                             : "border-slate-200 hover:border-slate-300",
                                     )}
                                 >
-                                    <img
-                                        src={getImageStylePreviewUrl(option.id)}
-                                        alt={option.label}
-                                        loading="lazy"
-                                        className="size-full object-cover"
-                                    />
+                                    {option.previewUrl ? (
+                                        <img
+                                            src={option.previewUrl}
+                                            alt={option.label}
+                                            loading="lazy"
+                                            className="size-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="flex size-full items-center justify-center bg-slate-100 text-xs text-slate-400">
+                                            暂无预览
+                                        </div>
+                                    )}
                                     <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-2 pt-8 pb-2 text-center text-xs leading-5 text-white">
                                         {option.label}
                                     </span>
@@ -161,6 +184,10 @@ export function ImageStylePopover({
                     </div>
                 </div>
             </PromptPopoverPanel>
+            <AddImageStyleDialog
+                open={addDialogOpen}
+                onClose={() => setAddDialogOpen(false)}
+            />
             </div>
             {showDivider ? <span className="h-4 w-px shrink-0 bg-slate-200" aria-hidden /> : null}
         </>

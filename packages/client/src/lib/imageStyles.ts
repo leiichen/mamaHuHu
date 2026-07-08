@@ -1,4 +1,8 @@
 // IMAGE_STYLE_IDS 图片风格 ID 列表（与后端 imageStyles.ts 保持一致）
+import { useMemo } from "react";
+import { getImageStylePreviewUrl } from "@/lib/imageStylePreviews";
+import { getCustomStyleBlobUrl, useCustomImageStyles } from "@/lib/customImageStyles";
+
 export const IMAGE_STYLE_IDS = [
     "retro-sci-fi-atompunk",
     "palace-intrigue-cold",
@@ -62,4 +66,36 @@ export function getImageStyleLabel(styleId: ImageStyleId | undefined): string | 
     }
 
     return IMAGE_STYLE_OPTIONS.find((option) => option.id === styleId)?.label ?? null;
+}
+
+// AllImageStyleOption 合并视图项（内置 + 自定义）
+export type AllImageStyleOption = {
+    id: string;
+    label: string;
+    // previewUrl 预览图地址：内置走 public 静态路径；自定义走上传时临时 blob URL（可能为空）
+    previewUrl: string | null;
+    isCustom: boolean;
+};
+
+// useAllImageStyleOptions 合并内置风格与自定义风格，订阅自定义风格变化
+export function useAllImageStyleOptions(): AllImageStyleOption[] {
+    const customStyles = useCustomImageStyles();
+
+    return useMemo(() => {
+        const builtin: AllImageStyleOption[] = IMAGE_STYLE_OPTIONS.map((option) => ({
+            id: option.id,
+            label: option.label,
+            previewUrl: getImageStylePreviewUrl(option.id),
+            isCustom: false,
+        }));
+
+        const custom: AllImageStyleOption[] = customStyles.map((style) => ({
+            id: style.id,
+            label: style.label,
+            previewUrl: getCustomStyleBlobUrl(style.id) ?? null,
+            isCustom: true,
+        }));
+
+        return [...builtin, ...custom];
+    }, [customStyles]);
 }
