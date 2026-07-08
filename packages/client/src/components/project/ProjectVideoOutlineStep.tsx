@@ -1,6 +1,6 @@
 // 短视频剧情大纲步骤：展示原始创意与剧情大纲（无分集）
-import { Loader2, MoreHorizontal, User, XCircle, CheckCircle2, Building2, Clapperboard, FileText, Edit3, Check } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Loader2, MoreHorizontal, User, XCircle, CheckCircle2, Building2, Clapperboard, FileText, Edit3, Check, Copy, CopyCheck } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
 import type { CreatedAssetItem } from "@/api/agent";
 import { useVideoOutline } from "@/hooks/useVideoOutline";
 import { OutlineAccordionItem } from "@/components/project/OutlineAccordionItem";
@@ -43,6 +43,46 @@ function splitEntry(entry: string): { name: string; desc: string } {
     const idx = entry.indexOf("：") !== -1 ? entry.indexOf("：") : entry.indexOf(":");
     if (idx === -1) return { name: entry, desc: "" };
     return { name: entry.slice(0, idx).trim(), desc: entry.slice(idx + 1).trim() };
+}
+
+// 一键复制按钮
+function CopyButton({ text }: { text: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch {
+            // 忽略复制失败
+        }
+    }, [text]);
+
+    return (
+        <button
+            type="button"
+            className="ml-1 inline-flex size-5 cursor-pointer items-center justify-center rounded text-slate-300 transition hover:bg-slate-100 hover:text-slate-500"
+            onClick={handleCopy}
+            title="复制内容"
+        >
+            {copied ? (
+                <CopyCheck className="size-3" strokeWidth={2} />
+            ) : (
+                <Copy className="size-3" strokeWidth={1.8} />
+            )}
+        </button>
+    );
+}
+
+// 去除引用行（引用角色/场景/关键道具），保留正文
+function stripReferenceLines(text: string): string {
+    return text
+        .replace(/^引用(?:角色|场景|关键道具)[：:][^。\n]*[。.]?\s*/gm, "")
+        .replace(/^@图\d+(?:=\S+)?[，,、]\s*/gm, "")
+        .replace(/^@图\d+(?:=\S+)?[。.]?\s*/gm, "")
+        .replace(/^\s*\n/gm, "")
+        .trim();
 }
 
 // 将 prompt 文本中的 @ 引用高亮
@@ -165,6 +205,7 @@ function OutlineJsonView({ data }: { data: OutlineJson }) {
                     <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800">
                         <FileText className="size-4 text-slate-400" strokeWidth={1.8} />
                         故事概要
+                        <CopyButton text={data.story!} />
                     </h3>
                     <p className="text-sm leading-7 text-slate-600">{data.story}</p>
                 </section>
@@ -175,6 +216,7 @@ function OutlineJsonView({ data }: { data: OutlineJson }) {
                     <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800">
                         <User className="size-4 text-slate-400" strokeWidth={1.8} />
                         角色 ({data.characters!.length})
+                        <CopyButton text={data.characters!.join("\n\n")} />
                     </h3>
                     <div className="space-y-2">
                         {data.characters!.map((entry, i) => {
@@ -195,6 +237,7 @@ function OutlineJsonView({ data }: { data: OutlineJson }) {
                     <h3 className="mb-2 flex items-center gap-1.5 text-sm font-medium text-slate-800">
                         <Building2 className="size-4 text-slate-400" strokeWidth={1.8} />
                         场景 ({data.scenes!.length})
+                        <CopyButton text={data.scenes!.join("\n\n")} />
                     </h3>
                     <div className="space-y-2">
                         {data.scenes!.map((entry, i) => {
@@ -218,7 +261,7 @@ function OutlineJsonView({ data }: { data: OutlineJson }) {
                     </h3>
                     <div className="space-y-2">
                         {data.segmentPrompts!.map((seg, i) => (
-                            <div key={`sg-${i}`} className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                            <div key={`sg-${i}`} className="group rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
                                 <div className="mb-2 flex items-center gap-2">
                                     <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">
                                         {seg.segment}
@@ -227,6 +270,7 @@ function OutlineJsonView({ data }: { data: OutlineJson }) {
                                     {seg.characters.length > 0 ? (
                                         <span className="text-xs text-slate-400">· {seg.characters.join("、")}</span>
                                     ) : null}
+                                    <CopyButton text={stripReferenceLines(seg.prompts.join("\n\n"))} />
                                 </div>
                                 {seg.prompts.map((p, j) => (
                                     <div key={`p-${j}`}>

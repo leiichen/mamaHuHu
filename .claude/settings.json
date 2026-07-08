@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx tsc *)",
       "Bash(npx vitest *)",
-      "Bash(grep -n \"const { script, loading\" /Users/lei/mamaHuHu/packages/client/src/components/project/ProjectVideoOutlineStep.tsx)"
+      "Bash(grep -n \"const { script, loading\" /Users/lei/mamaHuHu/packages/client/src/components/project/ProjectVideoOutlineStep.tsx)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }
