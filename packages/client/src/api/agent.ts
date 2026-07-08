@@ -41,6 +41,15 @@ export type VideoOutline = {
     text: string;
 };
 
+// CreatedAssetItem 大纲自动创建的资产项
+export type CreatedAssetItem = {
+    id: number;
+    type: string;
+    name: string;
+    imageStatus: "generating" | "completed" | "failed";
+    errorMessage?: string;
+};
+
 // VideoOutlineResult 短视频大纲 Agent 响应
 export type VideoOutlineResult = {
     agentId: string;
@@ -50,6 +59,7 @@ export type VideoOutlineResult = {
     projectId: number;
     scriptId: number;
     projectTitle: string;
+    createdAssets?: CreatedAssetItem[];
 };
 
 // GenerateScriptSummaryPayload 剧本摘要请求体

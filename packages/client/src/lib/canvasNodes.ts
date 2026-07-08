@@ -51,7 +51,7 @@ export function buildCanvasAssetNodeData(asset: ProjectAsset): CanvasAssetNodeDa
             kind === "character"
                 ? (appearanceName ?? CANVAS_NODE_UI.character.footerTitle)
                 : (entityName ?? asset.name ?? "未命名"),
-        mediaUrl: asset.url,
+        mediaUrl: asset.cover ?? asset.url,
         ...(kind === "character" && entityName ? { characterName: entityName } : {}),
         ...(kind === "text"
             ? { textContent: readAssetCanvasParams(asset.params)?.textContent ?? "" }
