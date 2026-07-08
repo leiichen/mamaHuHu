@@ -228,18 +228,6 @@ export class VideoOutlineService {
                 summaryText: outlineText,
             });
 
-            // 尝试解析结构化大纲并自动创建资产
-            let createdAssets: CreatedAssetItem[] | undefined;
-            const outlineJson = parseVideoOutlineJson(result.outputs);
-
-            if (outlineJson) {
-                createdAssets = await this.createAssetsFromOutline(
-                    userId,
-                    projectId,
-                    outlineJson,
-                );
-            }
-
             return {
                 agentId: VIDEO_OUTLINE_AGENT_ID,
                 agentName: VIDEO_OUTLINE_AGENT_NAME,
@@ -248,7 +236,6 @@ export class VideoOutlineService {
                 projectId: updated.projectId,
                 scriptId: updated.id,
                 projectTitle: updated.name,
-                ...(createdAssets ? { createdAssets } : {}),
             };
         } catch (error) {
             const message =
@@ -257,6 +244,59 @@ export class VideoOutlineService {
             await scriptService.markSummaryFailed(userId, projectId, message);
             throw error;
         }
+    }
+
+    /**
+     * 用户确认大纲后，解析已有大纲 JSON，批量创建资产并并行生图
+     * @param userId 当前用户 ID
+     * @param projectId 项目 ID
+     * @returns 创建的资产列表（含图片生成状态）
+     */
+    async confirmOutline(
+        userId: number,
+        projectId: number,
+    ): Promise<VideoOutlineResult> {
+        const script = await scriptService.getByProjectId(userId, projectId);
+
+        if (script.summaryStatus !== "completed") {
+            throw new Error("剧情大纲尚未生成，无法创建资产");
+        }
+
+        const outlineText = script.summaryText ?? "";
+
+        if (!outlineText.trim()) {
+            throw new Error("大纲文本为空，请重新生成大纲");
+        }
+
+        const outlineJson = parseVideoOutlineJson({ text: outlineText });
+
+        if (!outlineJson) {
+            // 给出诊断信息：展示大纲文本前 200 字符
+            const preview = outlineText.slice(0, 200).replace(/\n/g, " ");
+            throw new Error(
+                `大纲非结构化 JSON，无法自动创建资产。`,
+            );
+        }
+
+        const createdAssets = await this.createAssetsFromOutline(
+            userId,
+            projectId,
+            outlineJson,
+        );
+
+        // 标记已确认，刷新页面后按钮置灰
+        await scriptService.markAssetsConfirmed(userId, projectId);
+
+        return {
+            agentId: VIDEO_OUTLINE_AGENT_ID,
+            agentName: VIDEO_OUTLINE_AGENT_NAME,
+            outline: { text: outlineText },
+            text: outlineText,
+            projectId: script.projectId,
+            scriptId: script.id,
+            projectTitle: script.name,
+            createdAssets,
+        };
     }
 
     /**
@@ -339,35 +379,39 @@ export class VideoOutlineService {
             }
         }
 
-        // 3. 并行生成图片（所有资产同时生图，单个失败不影响其他）
-        const generationResults = await Promise.allSettled(
-            createdAssets.map((asset) =>
+        // 3. 后台并行生图（不阻塞返回，失败不影响确认状态）
+        this.startBackgroundImageGeneration(userId, createdAssets, outlineJson);
+
+        return createdAssets;
+    }
+
+    /**
+     * 后台并行生图：fire-and-forget，失败只记日志
+     */
+    private startBackgroundImageGeneration(
+        userId: number,
+        assets: CreatedAssetItem[],
+        outlineJson: VideoOutlineJson,
+    ): void {
+        Promise.allSettled(
+            assets.map((asset) =>
                 generateAssetImage(
                     userId,
                     asset.id,
-                    // 从已创建的资产中查找对应描述文本
                     this.resolveAssetDescription(outlineJson, asset),
                     asset.type as "character" | "scene",
                 ),
             ),
-        );
-
-        // 4. 更新资产图片生成状态
-        createdAssets.forEach((asset, index) => {
-            const result = generationResults[index];
-            if (result?.status === "fulfilled" && result.value.success) {
-                asset.imageStatus = "completed";
-            } else {
-                asset.imageStatus = "failed";
-                if (result?.status === "fulfilled") {
-                    asset.errorMessage = result.value.errorMessage;
-                } else {
-                    asset.errorMessage = result?.reason?.message ?? "生成异常";
-                }
-            }
+        ).then((results) => {
+            const completed = results.filter(
+                (r) => r.status === "fulfilled" && r.value.success,
+            ).length;
+            console.log(
+                `[videoOutline] 后台生图完成: ${completed}/${results.length} 成功`,
+            );
+        }).catch((err) => {
+            console.error("[videoOutline] 后台生图异常:", err);
         });
-
-        return createdAssets;
     }
 
     /**

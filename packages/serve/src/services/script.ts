@@ -32,6 +32,7 @@ export type ScriptParams = {
     summaryError?: string;
     serieContentStatus?: SummaryStatus;
     serieContentError?: string;
+    assetsConfirmed?: boolean;
 };
 
 // CreateScriptDraftInput 创建剧本草稿入参
@@ -554,6 +555,44 @@ export class ScriptService {
         }
 
         return script;
+    }
+
+    // 更新原始创意并重置大纲状态，触发前端重新生成
+    async updateSource(userId: number, projectId: number, source: string) {
+        const script = await this.getOwnedScript(userId, projectId);
+        const params = parseScriptParams(script.params);
+
+        const updated = await prisma.script.update({
+            where: { id: script.id },
+            data: {
+                source: source.trim(),
+                summary: null as unknown as Prisma.InputJsonValue,
+                params: {
+                    ...params,
+                    text: undefined,
+                    summaryStatus: SUMMARY_STATUS.PENDING,
+                    summaryError: undefined,
+                },
+            },
+        });
+
+        return formatScriptDetail(updated);
+    }
+
+    // 标记资产已确认创建
+    async markAssetsConfirmed(userId: number, projectId: number) {
+        const script = await this.getOwnedScript(userId, projectId);
+        const params = parseScriptParams(script.params);
+
+        await prisma.script.update({
+            where: { id: script.id },
+            data: {
+                params: {
+                    ...params,
+                    assetsConfirmed: true,
+                },
+            },
+        });
     }
 }
 

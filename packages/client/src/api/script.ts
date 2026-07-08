@@ -18,6 +18,7 @@ export type ScriptParams = {
     summaryError?: string;
     serieContentStatus?: SummaryStatus;
     serieContentError?: string;
+    assetsConfirmed?: boolean;
 };
 
 // ScriptDetail 剧本详情
@@ -67,5 +68,13 @@ export function fetchScriptDetail(projectId: number, options?: RequestOptions) {
         method: "GET",
         params: { project_id: projectId },
         signal: options?.signal,
+    });
+}
+
+// 更新剧本原始创意并重置大纲状态
+export function updateScriptSource(payload: { project_id: number; source: string }) {
+    return request<ScriptDetail>("/script/update_source", {
+        method: "POST",
+        data: payload,
     });
 }

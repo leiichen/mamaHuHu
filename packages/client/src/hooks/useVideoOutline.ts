@@ -1,7 +1,11 @@
 // 短视频剧情大纲页数据：拉取详情并在需要时触发大纲生成
 import { useCallback, useEffect, useRef, useState } from "react";
-import { generateVideoOutline, type CreatedAssetItem } from "@/api/agent";
-import { fetchScriptDetail, type ScriptDetail } from "@/api/script";
+import {
+    generateVideoOutline,
+    confirmVideoOutline,
+    type CreatedAssetItem,
+} from "@/api/agent";
+import { fetchScriptDetail, updateScriptSource, type ScriptDetail } from "@/api/script";
 import { getApiErrorMessage } from "@/lib/getApiErrorMessage";
 
 // POLL_INTERVAL_MS 生成中轮询间隔
@@ -23,8 +27,12 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
     const [generating, setGenerating] = useState(false);
     // errorMessage 错误提示
     const [errorMessage, setErrorMessage] = useState("");
-    // createdAssets 大纲生成后自动创建的资产列表
+    // createdAssets 用户确认后创建的资产列表
     const [createdAssets, setCreatedAssets] = useState<CreatedAssetItem[] | null>(null);
+    // confirming 是否正在确认并创建资产
+    const [confirming, setConfirming] = useState(false);
+    // confirmingRef 防重复点击（同步更新，比 state 更快）
+    const confirmingRef = useRef(false);
     // generateStartedRef 是否已触发过生成，避免重复请求
     const generateStartedRef = useRef(false);
     // onOutlineCompleteRef 完成回调引用
@@ -45,14 +53,10 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
     const startGenerate = useCallback(async () => {
         setGenerating(true);
         setErrorMessage("");
+        setCreatedAssets(null);
 
         try {
             const result = await generateVideoOutline({ project_id: projectId });
-
-            if (result.createdAssets?.length) {
-                setCreatedAssets(result.createdAssets);
-            }
-
             const detail = await loadDetail();
 
             if (detail.summaryStatus === "completed") {
@@ -77,6 +81,48 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
         void startGenerate();
     }, [startGenerate]);
 
+    // 更新原始创意并重新生成大纲
+    const updateCreative = useCallback(
+        async (newSource: string) => {
+            setErrorMessage("");
+            try {
+                await updateScriptSource({ project_id: projectId, source: newSource });
+                generateStartedRef.current = true;
+                void startGenerate();
+            } catch (error) {
+                setErrorMessage(
+                    getApiErrorMessage(error, "更新创意失败"),
+                );
+            }
+        },
+        [projectId, startGenerate],
+    );
+
+    // 用户确认大纲，创建资产并生成图片
+    const confirmOutline = useCallback(async () => {
+        if (confirmingRef.current || createdAssets !== null) {
+            return;
+        }
+        confirmingRef.current = true;
+        setConfirming(true);
+        setErrorMessage("");
+
+        try {
+            const result = await confirmVideoOutline({ project_id: projectId });
+
+            if (result.createdAssets?.length) {
+                setCreatedAssets(result.createdAssets);
+            }
+        } catch (error) {
+            setErrorMessage(
+                getApiErrorMessage(error, "资产创建失败，请稍后重试"),
+            );
+        } finally {
+            setConfirming(false);
+            confirmingRef.current = false;
+        }
+    }, [projectId, createdAssets]);
+
     useEffect(() => {
         generateStartedRef.current = false;
         setScript(null);
@@ -95,6 +141,11 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
                 }
 
                 setScript(detail);
+
+                // 如果已确认过，置灰按钮
+                if (detail.params.assetsConfirmed) {
+                    setCreatedAssets([]);
+                }
             } catch (error) {
                 if (!cancelled) {
                     setErrorMessage(getApiErrorMessage(error, "获取剧本详情失败，请稍后重试"));
@@ -147,8 +198,11 @@ export function useVideoOutline({ projectId, onOutlineComplete }: UseVideoOutlin
         script,
         loading,
         generating,
+        confirming,
         errorMessage,
         createdAssets,
         retryGenerate,
+        updateCreative,
+        confirmOutline,
     };
 }

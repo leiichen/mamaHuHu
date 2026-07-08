@@ -1,5 +1,5 @@
 // 短视频剧情大纲步骤：展示原始创意与剧情大纲（无分集）
-import { Building2, CheckCircle2, Clapperboard, FileText, Loader2, MoreHorizontal, User, XCircle } from "lucide-react";
+import { Loader2, MoreHorizontal, User, XCircle, CheckCircle2, Building2, Clapperboard, FileText, Edit3, Check } from "lucide-react";
 import { useState, useMemo } from "react";
 import type { CreatedAssetItem } from "@/api/agent";
 import { useVideoOutline } from "@/hooks/useVideoOutline";
@@ -286,9 +286,14 @@ function AssetsCreatedSection({ createdAssets }: AssetsCreatedSectionProps) {
     return (
         <div className="mx-auto w-full max-w-[920px] px-4 py-4 md:px-6">
             <div className="rounded-t-3xl bg-white px-6 py-5 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
-                <h3 className="mb-4 text-sm font-medium text-slate-800">
-                    自动创建资产 · 图片生成中
+                <h3 className="mb-1 flex items-center gap-2 text-sm font-medium text-slate-800">
+                    资产已创建
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-normal text-amber-600">
+                        <Loader2 className="size-3 animate-spin" strokeWidth={2} />
+                        图片后台生成中
+                    </span>
                 </h3>
+                <p className="mb-4 text-xs text-slate-400">角色和场景资产已添加至资产库，图片正在后台生成，稍后刷新即可看到</p>
 
                 <div className="space-y-4">
                     {characters.length > 0 ? (
@@ -301,10 +306,9 @@ function AssetsCreatedSection({ createdAssets }: AssetsCreatedSectionProps) {
                                 {characters.map((asset) => (
                                     <div
                                         key={`char-${asset.id}`}
-                                        className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2"
+                                        className="flex items-center rounded-lg bg-slate-50 px-3 py-2"
                                     >
                                         <span className="text-sm text-slate-700">{asset.name}</span>
-                                        <AssetStatusBadge status={asset.imageStatus} errorMessage={asset.errorMessage} />
                                     </div>
                                 ))}
                             </div>
@@ -321,10 +325,9 @@ function AssetsCreatedSection({ createdAssets }: AssetsCreatedSectionProps) {
                                 {scenes.map((asset) => (
                                     <div
                                         key={`scene-${asset.id}`}
-                                        className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2"
+                                        className="flex items-center rounded-lg bg-slate-50 px-3 py-2"
                                     >
                                         <span className="text-sm text-slate-700">{asset.name}</span>
-                                        <AssetStatusBadge status={asset.imageStatus} errorMessage={asset.errorMessage} />
                                     </div>
                                 ))}
                             </div>
@@ -352,7 +355,17 @@ export function ProjectVideoOutlineStep({
         () => new Set(),
     );
 
-    const { script, loading, generating, errorMessage, createdAssets, retryGenerate } =
+    // editingCreative 是否正在编辑原始创意
+    const [editingCreative, setEditingCreative] = useState(false);
+    // creativeDraft 编辑中的创意文本
+    const [creativeDraft, setCreativeDraft] = useState("");
+    // editingSaving 是否正在保存并重新生成
+    const [editingSaving, setEditingSaving] = useState(false);
+
+    const {
+        script, loading, generating, confirming, errorMessage,
+        createdAssets, retryGenerate, updateCreative, confirmOutline,
+    } =
         useVideoOutline({
             projectId,
             onOutlineComplete: onProjectTitleChange,
@@ -467,6 +480,95 @@ export function ProjectVideoOutlineStep({
                     ) : null}
                 </OutlineAccordionItem>
             </div>
+
+            {/* 大纲完成后显示操作按钮：修改创意 / 确认创建资产 */}
+            {script?.summaryStatus === "completed" && !editingCreative ? (
+                <div className="mx-auto mt-4 flex items-center gap-3">
+                    <button
+                        type="button"
+                        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 transition hover:bg-slate-50"
+                        onClick={() => {
+                            setCreativeDraft(script?.source ?? "");
+                            setEditingCreative(true);
+                        }}
+                    >
+                        <Edit3 className="size-3.5" strokeWidth={1.8} />
+                        修改创意
+                    </button>
+
+                    {!createdAssets ? (
+                        <button
+                            type="button"
+                            disabled={confirming}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+                            onClick={() => { void confirmOutline(); }}
+                        >
+                            {confirming ? (
+                                <>
+                                    <Loader2 className="size-3.5 animate-spin" strokeWidth={2} />
+                                    创建中...
+                                </>
+                            ) : (
+                                <>
+                                    <Check className="size-3.5" strokeWidth={2} />
+                                    确认，创建资产
+                                </>
+                            )}
+                        </button>
+                    ) : createdAssets.length === 0 ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm text-emerald-600">
+                            <CheckCircle2 className="size-3.5" strokeWidth={2} />
+                            资产已创建
+                        </span>
+                    ) : null}
+                </div>
+            ) : null}
+
+            {/* 修改创意编辑区 */}
+            {editingCreative ? (
+                <div className="mx-auto mt-4 overflow-hidden rounded-3xl bg-white p-4 shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+                    <textarea
+                        value={creativeDraft}
+                        onChange={(e) => setCreativeDraft(e.target.value)}
+                        className="min-h-[120px] w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800 outline-none placeholder:text-slate-400"
+                        placeholder="输入你构想的短视频创意..."
+                        disabled={editingSaving}
+                    />
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                        <button
+                            type="button"
+                            className="inline-flex cursor-pointer items-center rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-500 transition hover:bg-slate-50"
+                            onClick={() => setEditingCreative(false)}
+                            disabled={editingSaving}
+                        >
+                            取消
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!creativeDraft.trim() || editingSaving}
+                            className="inline-flex cursor-pointer items-center rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 disabled:opacity-50"
+                            onClick={async () => {
+                                setEditingSaving(true);
+                                try {
+                                    await updateCreative(creativeDraft.trim());
+                                    setEditingCreative(false);
+                                } finally {
+                                    setEditingSaving(false);
+                                }
+                            }}
+                        >
+                            {editingSaving ? (
+                                <>
+                                    <Loader2 className="mr-1 size-3.5 animate-spin" strokeWidth={2} />
+                                    重新生成中...
+                                </>
+                            ) : (
+                                "保存并重新生成"
+                            )}
+                        </button>
+                    </div>
+                </div>
+            ) : null}
 
             {createdAssets && createdAssets.length > 0 ? (
                 <AssetsCreatedSection createdAssets={createdAssets} />

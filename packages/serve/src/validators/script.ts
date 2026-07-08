@@ -43,6 +43,15 @@ export const generateEpisodeScriptSchema = z.object({
     project_id: z.number().int().positive("项目 ID 无效"),
 });
 
+// updateScriptSourceSchema 更新剧本原始创意请求校验
+export const updateScriptSourceSchema = z.object({
+    project_id: z.number().int().positive("项目 ID 无效"),
+    source: z
+        .string()
+        .min(20, "原始创意至少 20 字")
+        .max(30000, "原始创意不能超过 30000 字"),
+});
+
 // CreateScriptDraftInput 创建剧本草稿参数类型
 export type CreateScriptDraftInput = z.infer<typeof createScriptDraftSchema>;
 
@@ -54,3 +63,6 @@ export type GenerateScriptSummaryInput = z.infer<typeof generateScriptSummarySch
 
 // GenerateEpisodeScriptInput 生成分集剧本参数类型
 export type GenerateEpisodeScriptInput = z.infer<typeof generateEpisodeScriptSchema>;
+
+// UpdateScriptSourceInput 更新剧本原始创意参数类型
+export type UpdateScriptSourceInput = z.infer<typeof updateScriptSourceSchema>;
