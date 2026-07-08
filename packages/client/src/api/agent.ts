@@ -47,6 +47,7 @@ export type CreatedAssetItem = {
     type: string;
     name: string;
     imageStatus: "generating" | "completed" | "failed";
+    errorMessage?: string;
 };
 
 // VideoOutlineResult 短视频大纲 Agent 响应

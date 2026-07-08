@@ -28,6 +28,7 @@ export type CreatedAssetItem = {
     type: string;
     name: string;
     imageStatus: "generating" | "completed" | "failed";
+    errorMessage?: string;
 };
 
 // VideoOutlineResult 大纲生成完整响应（含持久化后的项目信息）
@@ -92,20 +93,25 @@ function parseSceneLabel(description: string): string {
     return description.slice(0, colonIndex).trim();
 }
 
+// GenerateAssetImageResult 单张资产生图结果
+type GenerateAssetImageResult = {
+    success: boolean;
+    errorMessage?: string;
+};
+
 /**
  * 为单个资产生成图片：调用 Seedream → 下载 → 上传七牛 → 更新资产 cover
  * @param userId 用户 ID
  * @param assetId 资产 ID
  * @param description 角色/场景描述文本
  * @param assetType 资产分类（character | scene）
- * @returns 是否成功
  */
 async function generateAssetImage(
     userId: number,
     assetId: number,
     description: string,
     assetType: "character" | "scene",
-): Promise<boolean> {
+): Promise<GenerateAssetImageResult> {
     try {
         const prompt = buildGenerationPrompt(description, assetType);
         const aspectRatio =
@@ -123,8 +129,9 @@ async function generateAssetImage(
 
         const imageUrl = result.images[0]?.url;
         if (!imageUrl) {
-            console.error(`[videoOutline] 资产生图未返回图片 assetId=${assetId}`);
-            return false;
+            const errMsg = "Seedream 未返回图片";
+            console.error(`[videoOutline] ${errMsg} assetId=${assetId}`);
+            return { success: false, errorMessage: errMsg };
         }
 
         // 2. 下载并上传七牛
@@ -133,39 +140,43 @@ async function generateAssetImage(
             const uploaded = await qiniuService.uploadFromRemoteUrl(imageUrl, "image");
             coverKey = uploaded.key;
         } catch (uploadError) {
-            // 回退：直接用 fetch 下载再上传（部分 CDN 不支持七牛 fetch）
-            const imageResponse = await fetch(imageUrl);
-            if (!imageResponse.ok) {
-                console.error(
-                    `[videoOutline] 下载生成图片失败 assetId=${assetId}`,
-                    imageResponse.status,
-                );
-                return false;
-            }
+            // 回退：直接用 fetch 下载再上传（部分 CDN 不支持七牛远程抓取）
+            try {
+                const imageResponse = await fetch(imageUrl);
+                if (!imageResponse.ok) {
+                    const errMsg = `下载生成图片失败 HTTP ${imageResponse.status}`;
+                    console.error(`[videoOutline] ${errMsg} assetId=${assetId}`);
+                    return { success: false, errorMessage: errMsg };
+                }
 
-            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            const ext = imageUrl.split(".").pop()?.split("?")[0] ?? "jpg";
-            const mimeType = imageResponse.headers.get("content-type") ?? "image/jpeg";
-            const uploaded = await qiniuService.uploadBuffer(
-                "image",
-                imageBuffer,
-                ext,
-                mimeType,
-            );
-            coverKey = uploaded.key;
+                const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+                const ext = imageUrl.split(".").pop()?.split("?")[0] ?? "jpg";
+                const mimeType = imageResponse.headers.get("content-type") ?? "image/jpeg";
+                const uploaded = await qiniuService.uploadBuffer(
+                    "image",
+                    imageBuffer,
+                    ext,
+                    mimeType,
+                );
+                coverKey = uploaded.key;
+            } catch (fetchError) {
+                const errMsg = fetchError instanceof Error ? fetchError.message : "下载上传图片失败";
+                console.error(`[videoOutline] ${errMsg} assetId=${assetId}`);
+                return { success: false, errorMessage: errMsg };
+            }
         }
 
-        // 3. 更新资产 cover
+        // 3. 更新资产 cover 与 url
         await assetService.updateAssetMedia(userId, assetId, {
-            url: "",
+            url: coverKey,
             cover: coverKey,
         });
 
-        return true;
+        return { success: true };
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        console.error(`[videoOutline] 资产生图失败 assetId=${assetId}:`, message);
-        return false;
+        console.error(`[videoOutline] 资产生图异常 assetId=${assetId}:`, message);
+        return { success: false, errorMessage: message };
     }
 }
 
@@ -274,6 +285,12 @@ export class VideoOutlineService {
                     {
                         canvas: {
                             textContent: characterDesc,
+                            generation: {
+                                prompt: characterDesc,
+                                modelId: CHARACTER_MODEL_ID,
+                                aspectRatio: CHARACTER_ASPECT_RATIO,
+                                resolution: DEFAULT_RESOLUTION,
+                            },
                         },
                     },
                 );
@@ -301,6 +318,12 @@ export class VideoOutlineService {
                     {
                         canvas: {
                             textContent: sceneDesc,
+                            generation: {
+                                prompt: sceneDesc,
+                                modelId: SCENE_MODEL_ID,
+                                aspectRatio: SCENE_ASPECT_RATIO,
+                                resolution: DEFAULT_RESOLUTION,
+                            },
                         },
                     },
                 );
@@ -332,8 +355,16 @@ export class VideoOutlineService {
         // 4. 更新资产图片生成状态
         createdAssets.forEach((asset, index) => {
             const result = generationResults[index];
-            asset.imageStatus =
-                result?.status === "fulfilled" && result.value ? "completed" : "failed";
+            if (result?.status === "fulfilled" && result.value.success) {
+                asset.imageStatus = "completed";
+            } else {
+                asset.imageStatus = "failed";
+                if (result?.status === "fulfilled") {
+                    asset.errorMessage = result.value.errorMessage;
+                } else {
+                    asset.errorMessage = result?.reason?.message ?? "生成异常";
+                }
+            }
         });
 
         return createdAssets;

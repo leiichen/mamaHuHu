@@ -121,7 +121,7 @@ export function applyAssetMediaUpdateToState(
 ): void {
     upsertCanvasAsset(state, payload.asset);
     patchCanvasNodeDataByAssetId(state, payload.assetId, {
-        mediaUrl: payload.asset.url,
+        mediaUrl: payload.asset.cover ?? payload.asset.url,
     });
     state.saveStatusVisible = true;
     state.errorMessage = "";
