@@ -380,7 +380,23 @@ export class ScriptService {
         }
 
         const params = parseScriptParams(script.params);
-        const displayName = truncateText(input.outline.text.split("\n")[0] ?? "", PROJECT_TITLE_MAX_LENGTH);
+
+        // 从 JSON 大纲的 story 字段推导标题，回退到原始创意
+        let displayName = "";
+        try {
+            const parsed = JSON.parse(input.outline.text);
+            if (parsed?.story && typeof parsed.story === "string") {
+                displayName = truncateText(parsed.story, PROJECT_TITLE_MAX_LENGTH);
+            }
+        } catch {
+            // JSON 解析失败，忽略
+        }
+        if (!displayName && script.source) {
+            displayName = truncateText(script.source, PROJECT_TITLE_MAX_LENGTH);
+        }
+        if (!displayName) {
+            displayName = truncateText(input.outline.text.split("\n")[0] ?? "", PROJECT_TITLE_MAX_LENGTH);
+        }
 
         const updatedParams: Prisma.InputJsonObject = {
             ...params,
